@@ -1,0 +1,4 @@
+---
+- hosts: testhost1
+  roles:
+    - common

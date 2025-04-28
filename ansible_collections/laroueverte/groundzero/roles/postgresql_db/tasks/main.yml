@@ -1,0 +1,33 @@
+---
+
+#################################
+# Role creating a postgresql database with : 
+# - postgis extensions
+# - the schema
+# - a script to vacuum/analyze the DB every night (postgresNightlyMaintenance)
+
+#################################
+# Depends from roles :  
+# - postgresql
+
+#################################
+# Parameters : 
+# - postgresql_db_schema_name : name of the postgresql database (schema) to create
+# - postgresql_db_extensions : list of extensions to add to the db
+# - postgresql_db_nightly_maintenance_hour: the hour of the time we will launch maintenance
+# - postgresql_db_nightly_maintenance_minute: the minute of the time we will launch maintenance
+#################################
+# Example : 
+#    - {role: postgresql_db, 
+#             schema_name: 'myproject',
+#             postgresql_db_extensions: ['uuid-ossp'],
+#   		      postgresql_db_nightly_maintenance_minute: '15',
+#             postgresql_db_nightly_maintenance_hour: '5'
+#      }
+
+- include: postgresql_db.yml
+  tags: postgresql_db
+
+- include: postgresql_db_cron.yml
+  tags: postgresql_db, system_cron
+  

@@ -1,0 +1,4 @@
+- name: Include main file
+  ansible.builtin.import_tasks:
+    file: mycompany.yml
+  tags: mycompany

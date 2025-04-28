@@ -1,0 +1,26 @@
+---
+
+- name: Set default use of transfert user variable
+  set_fact: usetransfertuser=false 
+
+- name: Set use of transfert user variable
+  set_fact: usetransfertuser=true 
+  when: system_backup_configuration.transfertuser is defined and system_backup_configuration.transfertuser
+  
+- name: Add transfert user
+  user: name=transfert state=present shell=/bin/bash generate_ssh_key=yes
+  when: usetransfertuser
+
+- name: Get transfert user public key
+  fetch: src=/home/transfert/.ssh/id_rsa.pub dest={{role_path}}/../../data
+  when: usetransfertuser
+
+- name: Add system backup script
+  copy: src=home/root/scripts/systemBackup.sh dest=/home/root/scripts/systemBackup.sh mode=0755
+
+- name: Add system backup launch scripts
+  template: 
+    src: home/root/scripts/launchSystemBackup.sh.j2 
+    dest: "/home/root/scripts/{{item.scriptname}}"
+    mode: 0755
+  with_items: "{{system_backup_configuration.backups}}"

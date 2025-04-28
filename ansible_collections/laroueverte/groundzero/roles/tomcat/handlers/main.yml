@@ -1,0 +1,19 @@
+- name: restart_tomcat0
+  shell: systemctl --system daemon-reload && systemctl enable tomcat0 && systemctl restart tomcat0
+  when: restart_tomcat is not defined or restart_tomcat == true
+  
+- name: restart_tomcat1
+  shell: systemctl --system daemon-reload && systemctl enable tomcat1 && systemctl restart tomcat1
+  when: restart_tomcat is not defined or restart_tomcat == true
+
+- name: restart_tomcat2
+  shell: systemctl --system daemon-reload && systemctl enable tomcat2 && systemctl restart tomcat2
+  when: restart_tomcat is not defined or restart_tomcat == true
+
+- name: restart_tomcat3
+  shell: systemctl --system daemon-reload && systemctl enable tomcat3 && systemctl restart tomcat3
+  when: restart_tomcat is not defined or restart_tomcat == true
+
+- name: restart zabbix agent
+  shell: systemctl --system daemon-reload && systemctl enable zabbix-agent && systemctl restart zabbix-agent
+  

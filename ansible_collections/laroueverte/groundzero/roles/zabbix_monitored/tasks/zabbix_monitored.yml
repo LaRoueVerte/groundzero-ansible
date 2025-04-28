@@ -1,0 +1,65 @@
+---
+
+- include: zabbix_repo.yml
+
+- name: Install zabbix agent
+  apt: name=zabbix-agent state=present
+  notify: restart zabbix agent
+  
+- name: Update zabbix agent conf file
+  lineinfile:
+    dest: /etc/zabbix/zabbix_agentd.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^ServerActive=', line: "ServerActive={{hostsdata[zabbix_server_host].ip}}:10051" }
+    - { regexp: '^Server=', line: "Server={{hostsdata[zabbix_server_host].ip}}" }
+    - { regexp: '^Hostname=', line: "Hostname={{inventory_hostname}}" }
+    - { regexp: '^Include=.etc.zabbix.zabbix_agentd.conf.d.', line: "Include=/etc/zabbix/zabbix_agentd.conf.d/*.conf" }
+  notify: restart zabbix agent
+
+- name: Copy zabbix lrv checks file
+  copy: src=etc/zabbix/zabbix_agentd.conf.d/debian.conf dest=/etc/zabbix/zabbix_agentd.conf.d/
+  notify: restart zabbix agent
+
+- name: Creates zabbix home dir to work
+  file: dest=/home/zabbix state=directory owner=zabbix group=zabbix
+  
+- name: Create zabbix scripts directory
+  file: dest=/home/root/scripts/zabbix state=directory
+  notify: restart zabbix agent
+  
+- name: Install script prerequisites "file" for checkOVHKernel.sh
+  apt: name=file state=present
+  
+- name: Copy zabbix lrv checks scripts
+  copy: src=home/root/scripts/zabbix/{{item.file}} dest=/home/root/scripts/zabbix/ mode=755
+  with_items:
+    - { file: 'checkDNS.sh' }
+    - { file: 'getRaidStatus.sh' }
+    - { file: 'checkDNSAccess.sh' }
+    - { file: 'checkFileSystemReadOnly.sh' }
+    - { file: 'checkProcess.sh' }
+    - { file: 'checkNbRunningProcesses.sh' }
+    - { file: 'checkNbProcesses.sh' }
+    - { file: 'getUpdates.sh' }
+    - { file: 'checkSystemState.sh' }
+    - { file: 'checkMountPoint.sh' }
+    - { file: 'checkExim4Queue.sh' }
+    - { file: 'checkServiceState.sh' }
+
+
+- name: Copy checkNetwork script
+  template: src=home/root/scripts/zabbix/checkNetwork.sh.j2 dest=/home/root/scripts/zabbix/checkNetwork.sh mode=755
+
+- name: Install sudo
+  apt: name=sudo state=present
+
+- name: Install zabbix sudoers file
+  copy: src=etc/sudoers.d/zabbix dest=/etc/sudoers.d/zabbix  mode=440
+
+- name: Install zabbix-sender if needed
+  apt: name=zabbix-sender state=present
+
+- name: Ensure zabbix_agent is running and enabled
+  service: name=zabbix-agent state=started enabled=true

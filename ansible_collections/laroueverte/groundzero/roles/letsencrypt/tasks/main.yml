@@ -1,0 +1,37 @@
+---
+
+# Enabled let's encrypt client.
+# This role is used by apache_java for common parts.
+# It can be used as a regular role for DNS validated certificates
+
+#################################
+# Parameters : 
+# - letsencrypt_domains_main  :  defines the main domain used to create the letsencrypt certificate
+# - letsencrypt_domains_others :  defines comma separated list of alternative domains used to create the letsencrypt certificate
+# - letsencrypt_autoreload : if true apache is reloaded after certificate generation
+# - letsencrypt_autoreload_openvpn : if defined and true, reload will restart openvpn
+# - letsencrypt_autoreload_gitlabnginx : if defined and true, reload will restart gitlab/nginx
+# - letsencrypt_checkcertificate : if true, only generate certificate if it doesn't exist
+# - letsencrypt_dns_validation_domain : For DNS validation, we automatically update a DNS zone hosted on OVH. This is the domain 
+# - letsencrypt_dns_ovhapi_application_key : For DNS validation, the application key to connect to OVH API
+# - letsencrypt_dns_ovhapi_application_secret : For DNS validation, the application secret to connect to OVH API
+# - letsencrypt_dns_ovhapi_consumer_key : For DNS validation, the consumer key to connect to OVH API
+
+- include: letsencrypt_common.yml
+  tags: letsencrypt
+  
+# Launch certbot if this role is meant to
+- import_tasks: letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ letsencrypt_domains_main }}"
+  when: letsencrypt_domains_main is defined and not letsencrypt_domains_others is defined
+  tags:
+    - letsencrypt
+
+- import_tasks: letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ letsencrypt_domains_main }}"
+    letsencrypt_serveralias: "{{ letsencrypt_domains_others }}"
+  when: letsencrypt_domains_main is defined and letsencrypt_domains_others is defined
+  tags:
+    - letsencrypt

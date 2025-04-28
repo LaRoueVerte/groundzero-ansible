@@ -1,0 +1,29 @@
+---
+
+- name: Ensure groups {{ ssh_user.groups}} exist
+  group:
+    name: "{{item}}"
+    state: present
+  with_items: "{{ ssh_user.groups }}"
+
+- name: Add {{ ssh_user.name }} additionnal user
+  user: name={{ ssh_user.name }} groups={{ ssh_user.groups }} shell=/bin/bash
+  
+- name: Set access.conf for {{ ssh_user.name }}
+  lineinfile:
+     dest: "/etc/security/access.conf"
+     regexp: "^\\+:{{ ssh_user.name }}:"
+     line: "+:{{ ssh_user.name }}:{{ ssh_user.ips|join(' ') }}"
+     insertbefore: "- : ALL :  ALL"
+  notify: 
+    sshd restart
+
+- name: Set SSH keys for {{ ssh_user.name }}
+  when: ssh_user.sshkeys is defined
+  authorized_key: user={{ ssh_user.name }} state=present key='{{ item }}' key_options='from="{{ssh_user.ips|join(',')}}"'
+  with_items: 
+    - "{{ssh_user.sshkeys}}"
+
+- meta: flush_handlers    
+    
+    

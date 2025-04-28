@@ -1,0 +1,2 @@
+- name: restart zabbix agent
+  shell: systemctl --system daemon-reload && systemctl enable zabbix-agent && systemctl restart zabbix-agent

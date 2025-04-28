@@ -1,0 +1,26 @@
+---
+# Inspired by https://www.malekal.com/galera-installer-un-cluster-mariadb-mysql-sur-debian-10/
+
+- name: Install mariadb
+  apt: name=mariadb-server state=present
+
+- name: Iptables rules for mariadb
+  template: src=etc/iptables.d/76_mariadb.conf.j2 dest=/etc/iptables.d/76_mariadb.conf
+  tags: system_iptables
+  notify: 
+    - iptables restart
+
+- name: Create directory for mariadb override
+  file: state=directory name=/etc/systemd/system/mariadb.service.d/ mode=755
+
+- name: Override mariadb service in order to be able to write logs outside of /var/log. If 'restart mariadb' handler below fails, it may mean that the cluster is not created yet ('creating it 'means start the first node of the cluster, not initializing data). You have to create it using command "galera_new_cluster" to create the cluster using the data available on this node. Beware of not being in a split brain scenario https://en.wikipedia.org/wiki/Split-brain_(computing) by first checking if other nodes are started and reachable for this node.
+  copy: src=etc/systemd/system/mariadb.service.d/override.conf dest=/etc/systemd/system/mariadb.service.d/override.conf mode=644
+  notify:
+    - systemd reload
+    - restart mariadb
+
+- name: Create galera configuration file for mariadb. If 'restart mariadb' handler below fails, it may mean that the cluster is not created yet ('creating it 'means start the first node of the cluster, not initializing data). You have to create it using command "galera_new_cluster" to create the cluster using the data available on this node. Beware of not being in a split brain scenario https://en.wikipedia.org/wiki/Split-brain_(computing) by first checking if other nodes are started and reachable for this node.
+  template: src=etc/mysql/mariadb.conf.d/99.galera.cnf.j2 dest=/etc/mysql/mariadb.conf.d/99.galera.cnf
+  notify: restart mariadb
+
+- meta: flush_handlers

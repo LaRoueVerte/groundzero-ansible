@@ -1,0 +1,4 @@
+---
+
+- include: reboot_protection.yml
+  tags: reboot_protection

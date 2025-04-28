@@ -1,0 +1,15 @@
+---
+
+- name: Create zabbix.list APT configuration file for debian
+  copy: dest=/etc/apt/sources.list.d/zabbix.list content="deb https://repo.zabbix.com/zabbix/{{zabbix_version}}/debian/ {{debian.data[debian_distri].debian_name}} main\n"
+  register: zabbix_repo
+
+- name: Copy zabbix preferences APT file to pin zabbix-agent from zabbix repo
+  copy: src=../../zabbix_monitored/files/etc/apt/preferences.d/zabbix dest=/etc/apt/preferences.d/zabbix
+  register: zabbix_pref
+
+- name: Install the key for zabbix 
+  get_url: url=https://repo.zabbix.com/zabbix-official-repo.key dest=/etc/apt/trusted.gpg.d/zabbix-official-repo.asc
+
+- apt: update_cache=yes
+  when: zabbix_repo.changed or zabbix_pref.changed

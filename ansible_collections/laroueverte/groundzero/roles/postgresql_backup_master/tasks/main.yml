@@ -1,0 +1,37 @@
+---
+
+#################################
+# Role installing :
+# - postgresql replication and backup master node
+
+#################################
+# Parameters : 
+# - schema_name : the name of the database to backup /replicate
+# - postgresql_backup_rsync: do we need to rsync the backup folder to a another folder (optional, default : true)
+# - postgresql_backup_rsync_folder:  the folder used to rsync backups
+# - backup_recipient_server:  the 'ansible' name of the server that will be recipient of the backup
+# - postgresql_backup_retention_num : the number of backup to keep in total and for the "day" part (optional, default 10)
+# - postgresql_backup_master_state : ENABLED / DISABLED
+#          If set to ENABLED, this host will be master, implies : 
+#            - Periodically replicates database to db2
+#          If set to DISABLED, this host will be backup recipient, implies : 
+#            - Does not perform database replication
+# - postgresql_fallback_server : the 'ansible' name of the fallback DB server (eg: db2.mycompany.net)
+
+#################################
+# Example : 
+#    - {role: postgresql_backup_master, 
+#             schema_name: mydb, 
+#             postgresql_backup_rsync_folder: /mnt/cifsbackup/mydbbackup,
+#             backup_recipient_server: otherdbdb2.mycompany.nett
+#      }
+
+
+- import_tasks: postgresql_backup_master.yml
+  tags:
+    - postgresql_backup_master
+
+- import_tasks: postgresql_backup_master_cron.yml
+  tags:
+    - postgresql_backup_master
+    - system_cron

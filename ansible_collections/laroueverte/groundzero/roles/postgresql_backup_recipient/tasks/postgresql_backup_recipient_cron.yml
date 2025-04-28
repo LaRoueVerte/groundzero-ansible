@@ -1,0 +1,11 @@
+---
+- name: Install recipient PG Replication crontab (without rsync by default) 
+  cron:
+    user: transfert
+    name: "PG Replication for backup recipient"
+    hour: "{{postgresql_backup_recipient_replication_hour}}"
+    minute: "{{postgresql_backup_recipient_replication_minute}}"
+    job: "/home/root/scripts/transfert/replicationPostgresDB.sh --dbname {{postgresql_db_schema_name}} --localfolder /home/transfert/{{postgresql_db_schema_name}}/backups --remotefolder {{backup_recipient_remote_folder}} --server {{backup_recipient_server}} --nbkeep {{(postgresql_backup_retention_num is defined)|ternary(postgresql_backup_retention_num, 10)}} {{(pgDumpOptions is defined)|ternary(pgDumpOptions, '')}} >> /var/log/transfert/transfert_cron_backupPostgresHourly.log 2>&1"
+    disabled: "{{ postgresql_backup_recipient_replication is not defined or postgresql_backup_recipient_replication is false }}"
+  when: postgresql_backup_recipient_replication is defined and postgresql_backup_recipient_replication
+    

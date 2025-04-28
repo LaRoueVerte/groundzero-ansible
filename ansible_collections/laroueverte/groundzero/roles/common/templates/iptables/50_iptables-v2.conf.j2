@@ -1,0 +1,57 @@
+{% if 'laroueverte.groundzero.apache' in ansible_role_names %}
+{% if http_lrv_restricted is defined %}
+
+#Autoriser port 80 uniquement pour nos IPs
+{% for adsl_ip in all_whitelisted_ips%}
+#pour adsl {{adsl_ip}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 80 --source {{adsl_ip}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 443 --source {{adsl_ip}} -j ACCEPT
+{% endfor %}
+
+{% if iptables_http_allowed_ips is defined %}
+{% for iptables_http_allowed_ip in iptables_http_allowed_ips %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 80 --source {{iptables_http_allowed_ip}} -j ACCEPT
+{% endfor %}
+{% endif %}
+
+{% if iptables_https_allowed_ips is defined %}
+{% for iptables_https_allowed_ip in iptables_https_allowed_ips %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 443 --source {{iptables_https_allowed_ip}} -j ACCEPT
+{% endfor %}
+{% endif %}
+
+{% else %}{# if http_lrv_restricted is defined #}
+
+#Autoriser port 80 HTTP en entree pour tout le monde
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 80 -j ACCEPT
+#Autoriser port 443 HTTP en entree pour tout le monde
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 443 -j ACCEPT
+{% endif %}{# if http_lrv_restricted is defined #}
+{% endif %}{# if 'laroueverte.groundzero.apache' in ansible_role_names #}
+
+#Autoriser port 22 SSH en entree
+{% if iptables_ssh_open is defined and iptables_ssh_open %}
+#Pour tous
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 22 -j ACCEPT
+{% else %}
+
+#pour les IPs whitelistées
+{% for iptables_ssh_client in all_whitelisted_ips %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 22 --source {{iptables_ssh_client}} -j ACCEPT
+{% endfor %}
+
+{% if iptables_ssh_clients is defined %}
+{% for iptables_ssh_client in iptables_ssh_clients %}
+#IP supplementaire pour ce serveur {{iptables_ssh_client}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 22 --source {{iptables_ssh_client}} -j ACCEPT
+{% endfor %}
+{% endif %}
+{% endif %}
+
+
+{% if ('laroueverte.groundzero.postgresql_backup_recipient' in ansible_role_names ) and postgresql_backup_recipient_state=='ENABLED' %}
+#pour backup master
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 22 --source {{hostsdata[postgresql_master_hostname].ip}} -j ACCEPT
+{% endif %}
+
+

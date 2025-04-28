@@ -1,0 +1,13 @@
+---
+
+- name: Install Ntp
+  apt: name={{ debian.data[debian_distri].ntp_package }} state=present
+  register: aptout
+
+- name: Reconfigure ntp if neeeded
+  shell: dpkg-reconfigure {{ debian.data[debian_distri].ntp_package }}
+  when: time_forcereconfigure is defined or aptout.changed
+
+- copy: dest=/etc/timezone content="Europe/Paris\n"
+
+- file: dest=/etc/localtime src=/usr/share/zoneinfo/Europe/Paris state=link

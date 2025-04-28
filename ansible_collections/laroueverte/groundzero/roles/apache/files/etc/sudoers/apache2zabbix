@@ -1,0 +1,2 @@
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/getApacheInfo.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkApacheZombies.sh

@@ -1,0 +1,21 @@
+---
+- name: Enables proxy in apache2
+  apache2_module: state=present name=proxy_http
+  
+- name: Enables rewrite in apache2
+  apache2_module: state=present name=rewrite
+
+- name: creates /var/www first
+  file: dest=/var/www state=directory
+  notify: apache_restart
+
+- name: copy parking contents
+  copy: src=var/www/parking/index.html dest=/var/www/parking/index.html
+  notify: apache_restart
+
+- name: copy parking who.txt
+  copy: dest=/var/www/parking/who.txt content='Hello from {{inventory_hostname}}/{{host_role}} !'  
+  
+- name: copy addok vhost
+  copy: src=etc/apache2/sites-available/addok.conf dest=/etc/apache2/sites-enabled/000_addok.conf
+  notify: apache_restart

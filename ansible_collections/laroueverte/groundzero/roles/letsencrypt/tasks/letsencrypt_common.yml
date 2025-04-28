@@ -1,0 +1,81 @@
+---
+- name: install certbot in python3 
+  apt: name=python3-certbot state=present
+  tags:
+    - letsencrypt
+
+- name: install certbot  
+  apt: name=certbot state=present
+  tags:
+    - letsencrypt
+
+- name: Disable the cronjob installed by the certbot package
+  file: dest=/etc/cron.d/certbot state=absent
+  tags:
+    - letsencrypt
+    - system_cron
+  
+- name: Disable the certbot's timer service started by the certbot package. If changed, may need to issue systemctl reset-failed
+  service: name=certbot.timer enabled=no state=stopped    
+  tags:
+    - letsencrypt
+    - system_cron
+
+- name: Disable the certbot's service started by the certbot package. If changed, may need to issue systemctl reset-failed
+  service: name=certbot enabled=no state=stopped
+  tags:
+    - letsencrypt
+  
+- name: Install certbot renew notify script
+  template: src=home/root/scripts/letsencrypt_notify.sh.j2 dest=/home/root/scripts/letsencrypt_notify.sh mode=u+x
+  tags:
+    - letsencrypt
+    - system_cron
+ 
+- name: Install certbot renew
+  cron: state=present user=root name="Certbot renew" minute='55' hour='01' job="date >> /var/log/root/root_certbot_renew.log && certbot renew --deploy-hook '/home/root/scripts/letsencrypt_notify.sh' >> /var/log/root/root_certbot_renew.log 2>&1"
+  tags:
+    - letsencrypt
+    - system_cron
+
+- name: Install PIP python package manager
+  apt: name=python3-pip state=present
+  tags:
+    - letsencrypt
+
+- name: Install PIP phyton package manager dependency for setuptools
+  apt: name=python3-setuptools state=present
+  tags:
+    - letsencrypt
+
+- name: Install Python OVH wrapper library required by letsencrypt_dns_authhook.sh (it must be installed using pip3 install --break-system-packages ovh)
+  pip: name=ovh executable=pip3 extra_args="--break-system-packages"
+  when: debian.data[debian_distri].python_externally_managed
+  tags:
+    - letsencrypt
+
+- name: Install Python OVH wrapper library required by letsencrypt_dns_authhook.sh
+  pip: name=ovh executable=pip3
+  when: not debian.data[debian_distri].python_externally_managed
+  tags:
+    - letsencrypt
+
+- name: Install Python DNS library required by letsencrypt_dns_authhook.sh  (it must be installed using pip3 install --break-system-packages ovh)
+  pip: name=dnspython executable=pip3 extra_args="--break-system-packages"
+  when: debian.data[debian_distri].python_externally_managed
+  tags:
+    - letsencrypt
+
+- name: Install Python DNS library required by letsencrypt_dns_authhook.sh
+  pip: name=dnspython executable=pip3
+  when: not debian.data[debian_distri].python_externally_managed
+  tags:
+    - letsencrypt
+
+- name: Copy DNS pre-hook file template
+  template: src=home/root/scripts/letsencrypt_dns_authhook.sh.j2 dest=/home/root/scripts/letsencrypt_dns_authhook.sh mode=700
+  when: letsencrypt_dns_ovhapi_application_key is defined
+  tags:
+    - letsencrypt
+    - letsencrypt_dns_authhook
+  

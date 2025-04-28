@@ -1,0 +1,15 @@
+#!/bin/bash
+cd `dirname $0`
+. ../base.sh
+
+OUTPUT=`psql -U postgres -c "select pg_is_in_recovery as recovery from pg_is_in_recovery();" -A -t`
+if [[ "$OUTPUT" ==  "t" ]]; then
+        echo "STANDBY";
+        exit 0;
+elif [[ "$OUTPUT" ==  "f" ]]; then
+        echo "PRIMARY";
+        exit 0;
+else
+        echo "ERROR";
+        exit 1;
+fi;

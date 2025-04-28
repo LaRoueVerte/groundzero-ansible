@@ -1,0 +1,10 @@
+---
+
+- name: Install cron to restart openvpn every morning
+  cron: state=present user=root disabled="{{not openvpn_cron_enabled}}" name="Open VPN restart" minute='{{openvpn_cron_minute}}' hour='{{openvpn_cron_hour}}' job="date >> /var/log/root/root_cron_openvpn-restart.log && systemctl restart openvpnas >> /var/log/root/root_cron_openvpn-restart.log 2>&1"
+ 
+- name: Install Open VPN Backup cron nightly job
+  cron: state=present user=root disabled="{{not openvpn_backup_enabled}}" name="Open VPN Backup" minute='00' hour='04' job="/home/root/scripts/openvpn/openVpnBackup.sh >> /var/log/root/root_cron_openvpn-backup.log 2>&1"
+
+- name: Install Open VPN cron to delete old logs (see https://openvpn.net/vpn-server-resources/logging-and-debug-flag-options-for-access-server/)
+  cron: state=present user=root minute=0 hour=5 name="Open VPN log rotation" job=" bash -c 'for i in {100..1000}; do [ ! -e /var/log/openvpnas.log.$i ] || rm /var/log/openvpnas.log.$i; done' > /var/log/root/root_cron_openvpn-rotation.log  2>&1"

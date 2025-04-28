@@ -1,0 +1,18 @@
+---
+
+#Ci-dessous le test tomcat_instance == 0 semble marcher dans le cas de déploiement mais pas dans le cas de l'install.
+#when:  tomcat_instance == '0' est peut-être requis pour l'install. A vérifier...
+- copy: owner=tomcat group=tomcat dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/who.jsp content='{{inventory_hostname}}/tomcat{{tomcat_instance}} <a href="{{(tomcat_who_homepath is defined) | ternary(tomcat_who_homepath,'/')}}">home</a><br><a href="/who.jsp;jsessionid=switch.tomcat1">switch to tomcat1</a><br/>Build {{tomcat_build_number}}'
+  when:  tomcat_instance == 0 
+
+- copy: owner=tomcat group=tomcat dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/who.jsp content='{{inventory_hostname}}/tomcat{{tomcat_instance}} <a href="{{(tomcat_who_homepath is defined) | ternary(tomcat_who_homepath,'/')}}">home</a><br><a href="/who.jsp;jsessionid=switch.tomcat0">switch to tomcat0</a><br/>Build {{tomcat_build_number}}'
+  when:  tomcat_instance == 1
+
+- name: stat /home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/index.jsp
+  stat: path=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/index.jsp
+  register: tomcat_index
+
+- name: Creates index.jsp if not already existing
+  copy: owner=tomcat group=tomcat dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/index.jsp content='Hello from {{inventory_hostname}}/tomcat{{tomcat_instance}} !'
+  when: not tomcat_index.stat.exists
+  

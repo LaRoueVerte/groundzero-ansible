@@ -1,0 +1,36 @@
+---
+- name: Enables ssl in apache2
+  apache2_module: state=present name=ssl
+  notify: apache_restart
+  tags:
+    - apache_vhosts
+
+# Flush handlers to be able to make the ACME letsencrypt challenge
+- meta: flush_handlers    
+  tags:
+    - apache_vhosts
+
+- name: Deletes the certificate if requested
+  command: certbot delete --cert-name {{apache_java_vhost.servername}}
+  when: certbot_delete_certificate is defined and certbot_delete_certificate
+  args:
+    removes: /etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+  tags:
+    - apache_vhosts
+
+- name: Creates the certificates by launching certbot if not existing
+  command: certbot certonly --webroot --non-interactive --agree-tos --email {{common_monitoring_email}} -w /var/www/letsencrypt/ -d {{apache_java_vhost.servername}} -d {{apache_java_vhost.serveralias|join(' -d ')}}
+  when: apache_java_vhost.serveralias is defined
+  args:
+    creates: /etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+  tags:
+    - apache_vhosts
+
+- name: Creates the certificates by launching certbot if not existing
+  command: certbot certonly --webroot --non-interactive --agree-tos --email {{common_monitoring_email}} -w /var/www/letsencrypt/ -d {{apache_java_vhost.servername}}
+  when: apache_java_vhost.serveralias is not defined
+  args:
+    creates: /etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+  tags:
+    - apache_vhosts
+  

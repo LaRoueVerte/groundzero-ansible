@@ -1,0 +1,74 @@
+---
+
+- name: install certbot for apache in python3 
+  apt: name=python3-certbot-apache state=present
+  tags:
+    - letsencrypt
+
+- name: creates letsencrypt challenge dir
+  file: name=/var/www/letsencrypt/ state=directory
+  tags:
+    - letsencrypt
+
+- name: Copy HTTP vhost part
+  template: src=etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTP.conf.j2 dest=/etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTP.conf
+  tags:
+    - letsencrypt
+
+- name: check if a letsencrypt certificate is already created if applicable
+  stat: path=/etc/letsencrypt/live/{{apache_letsencrypt_domains_main}}/cert.pem
+  register: letsencryptcertificate
+  tags:
+    - letsencrypt
+
+- name: Enables ssl in apache2 ( if previous letsencrypt certificate failed, this could failed to restart apache. Fix errors in apache and restart it yourself).
+  apache2_module: state=present name=ssl
+  notify: apache_restart
+  tags:
+    - letsencrypt
+
+- name: Copy HTTPS vhost part
+  template: src=etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTPS.conf.j2 dest=/etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTPS.conf
+  notify: apache_restart
+  tags:
+    - letsencrypt
+
+# Launch certbot
+- import_tasks: ../../letsencrypt/tasks/letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ apache_letsencrypt_domains_main }}"
+    letsencrypt_checkcertificate: true
+  when: apache_letsencrypt_domains_others is not defined
+  tags:
+    - letsencrypt
+
+- import_tasks: ../../letsencrypt/tasks/letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ apache_letsencrypt_domains_main }}"
+    letsencrypt_serveralias: "{{ apache_letsencrypt_domains_others }}"
+    letsencrypt_checkcertificate: true
+  when: apache_letsencrypt_domains_others is defined
+  tags:
+    - letsencrypt
+
+
+- name: check if a letsencrypt certificate has been created (done only if it was not present before)
+  stat: path=/etc/letsencrypt/live/{{apache_letsencrypt_domains_main}}/cert.pem
+  register: letsencryptcertificateafter
+  when: not letsencryptcertificate.stat.exists
+  tags:
+    - letsencrypt
+
+- name: Copy HTTPS vhost part again with generated certificate (done only if it a certificate has been generated)
+  template: src=etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTPS.conf.j2 dest=/etc/apache2/lrv/LRV_LetsEncrypt_Common_HTTPS.conf
+  when: not letsencryptcertificate.stat.exists and letsencryptcertificateafter.stat.exists
+  tags:
+    - letsencrypt
+  notify: apache_restart
+
+- name: Check if certificate has been generated properly (done only if it a certificate has been generated)
+  fail: msg="Certificate generation using DNS failed !"
+  when: not letsencryptcertificate.stat.exists and not letsencryptcertificateafter.stat.exists
+  tags:
+    - letsencrypt
+  

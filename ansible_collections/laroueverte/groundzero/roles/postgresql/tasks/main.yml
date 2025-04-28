@@ -1,0 +1,75 @@
+---
+
+#################################
+# Role installing :
+# - postgresql
+# - postgis (optionnal)
+# - an application user
+
+#################################
+# Parameters : 
+# - postgresql_version : version of postgresql to install, supports any version supported by pgdg or debian
+# - postgresql_postgis_version : if set to NONE, does not install postgis, otherwise, installs this version of postgis (the postgresql+postgis package must exist)
+# - postgresl_application_user : application user namer 
+# - postgresl_application_password : application user password
+# - postgresql_repository : if set set to 'pgdg', uses the repo from postgresql ( https://wiki.postgresql.org/wiki/Apt ), otherwise, the one from debian
+# - postgresql_clients : an array containing the hostnames of all clients accessing to this database. Pass an empty array to allow only local clients
+# - postgresql_clients_ips : an array containing the ips of clients accessing to this database
+# - postgresql_clients_ssl : if defined boolean that forces clients to connect using SSL. Default : false 
+#          if ssl : 
+#           - postgresql_ssl_key_encrypt : the path to the private key of the certificate : IT IS STONLGLY RECOMMENDED TO USE A VAULT FOR THIS FILE
+#           - postgresql_ssl_pem : the path to the ssl certificate
+# 
+# - postgresql_conf : A dictionary of configurations to apply, all are optional and can be can be: 
+#            - shared_buffers
+#            - effective_cache_size
+#            - maintenance_work_mem
+#            - effective_io_concurrency
+#            - work_mem
+#            - max_worker_processes
+#            - max_parallel_workers_per_gather
+#            - max_parallel_workers
+#            For details, check postgresql documentation, a configuration can be generated using https://pgtune.leopard.in.ua
+
+#################################
+# Example : 
+#    - {role: postgresql, 
+#             postgresql_version: 9.4, 
+#             postgresql_postgis_version: 2.1, 
+#             repository: pgdg,
+#             postgresl_application_user: 'myapp'
+#             postgresl_application_password: 'use a vault for storing this password'
+#             postgresql_clients: ['myfront.mycompany.net']
+#             postgresql_clients_ssl: true,
+#             postgresql_conf: {
+#                   shared_buffers: '16GB',
+#                   effective_cache_size: '48GB',
+#                   maintenance_work_mem: '2GB',
+#                   effective_io_concurrency: '200',
+#                   work_mem: '20971kB',
+#                   max_worker_processes: '12',
+#                   max_parallel_workers_per_gather: '4',
+#                   max_parallel_workers: '12'
+#             }
+#      }
+
+
+- include: postgresql.yml
+  tags: postgresql
+  
+- include: postgresql_ssl.yml
+  tags: postgresql_ssl,postgresql
+  when: postgresql_clients_ssl is defined and postgresql_clients_ssl
+
+- include: postgresql_conf.yml
+  tags: postgresql_conf,postgresql
+  
+- include: postgresql_replication.yml
+  tags: postgresql_replication,postgresql
+  when: postgresql_replication_on is defined and postgresql_replication_on
+
+- include: postgresql_monitored.yml
+  tags: postgresql,postgresql_monitored
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+
+  

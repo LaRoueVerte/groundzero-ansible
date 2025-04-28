@@ -1,0 +1,55 @@
+/var/log/tomcat/{{tomcat_instance}}/catalina.out {
+        create 700 tomcat tomcat
+        daily
+        rotate 400
+        dateext
+        dateformat .%Y-%m-%d
+        dateyesterday
+        extension .out
+        copytruncate
+}
+
+/var/log/tomcat/{{tomcat_instance}}/ROTATEME.catalina {
+        create 700 tomcat tomcat
+        daily
+        rotate 0
+        postrotate
+                /home/root/scripts/keepRecent/keepRecent.sh /var/log/tomcat/{{tomcat_instance}}/ 400 catalina. .log
+        endscript
+}
+
+/var/log/tomcat/{{tomcat_instance}}/ROTATEME.host-manager {
+        create 700 tomcat tomcat
+        daily
+        rotate 0
+        postrotate
+                /home/root/scripts/keepRecent/keepRecent.sh /var/log/tomcat/{{tomcat_instance}}/ 400 host-manager. EMPTY
+        endscript
+}
+
+/var/log/tomcat/{{tomcat_instance}}/ROTATEME.localhost {
+        create 700 tomcat tomcat
+        daily
+        rotate 0
+        postrotate
+                /home/root/scripts/keepRecent/keepRecent.sh /var/log/tomcat/{{tomcat_instance}}/ 10 localhost. EMPTY
+        endscript
+}
+
+/var/log/tomcat/{{tomcat_instance}}/ROTATEME.localhost_access {
+        create 700 tomcat tomcat
+        daily
+        rotate 0
+        postrotate
+                /home/root/scripts/keepRecent/keepRecent.sh /var/log/tomcat/{{tomcat_instance}}/ 10 localhost_access_log. EMPTY
+        endscript
+}
+
+/var/log/tomcat/{{tomcat_instance}}/ROTATEME.manager {
+        create 700 tomcat tomcat
+        daily
+        rotate 0
+        postrotate
+                /home/root/scripts/keepRecent/keepRecent.sh /var/log/tomcat/{{tomcat_instance}}/ 400 manager. EMPTY
+        endscript
+}

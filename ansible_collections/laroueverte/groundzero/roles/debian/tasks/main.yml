@@ -1,0 +1,17 @@
+---
+
+- apt: update_cache=yes cache_valid_time=3600
+  tags: common_debian
+
+- include: bash.yml
+  tags: bash, common_debian
+   
+- include: utils.yml
+  tags: common_debian,common_debian_utils
+
+- include: locale.yml
+  tags: common_locale, common_debian
+
+- include: eol_cron.yml
+  tags: eol_cron, common_debian
+  

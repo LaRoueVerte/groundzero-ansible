@@ -1,0 +1,24 @@
+---
+- name: Download BAN
+  get_url: dest=~/adresses-addok-france-{{addok_ban_version}}.ndjson.gz url=https://adresse.data.gouv.fr/data/ban/adresses/{{addok_ban_version}}/addok/adresses-addok-france.ndjson.gz
+  tags:
+    - addok_ban_download
+ 
+- name: Unpack downloaded BAN file
+  shell: gunzip -f ~/adresses-addok-france-{{addok_ban_version}}.ndjson.gz
+
+- name: Stop Addok service
+  service: name=addok enabled=yes state=stopped
+
+- name: Reset data
+  shell: echo "yes" | /etc/addok/venv/bin/addok reset
+
+- name: Import BAN
+  command: /etc/addok/venv/bin/addok batch ~/adresses-addok-france-{{addok_ban_version}}.ndjson
+
+- name: Ngrams
+  command: /etc/addok/venv/bin/addok ngrams
+    
+- name: Start Addok service
+  service: name=addok enabled=yes state=started
+  

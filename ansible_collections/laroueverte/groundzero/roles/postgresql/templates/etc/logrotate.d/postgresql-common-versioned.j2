@@ -1,0 +1,15 @@
+/var/log/postgresql/{{postgresql_version}}/pglog.tgz {
+        create
+        missingok
+        ifempty
+        rotate 7
+        weekly
+        sharedscripts
+        prerotate
+                cd /var/log/postgresql/{{postgresql_version}}
+                tar -C /var/log/postgresql/{{postgresql_version}} -zcp --remove-files --wildcards -f pglog.NEW.tgz --exclude *$(date +%Y-%m-%d)* *.log
+                mv pglog.NEW.tgz pglog.tgz
+                chown postgres:postgres pglog.tgz
+        endscript
+        su root root
+}

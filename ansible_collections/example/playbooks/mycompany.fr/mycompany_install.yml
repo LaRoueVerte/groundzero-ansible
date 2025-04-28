@@ -1,0 +1,13 @@
+---
+
+- hosts: mycompany.fr
+  roles:
+    - laroueverte.groundzero.java
+# If your host is hosted in ovh dedicated or vps, you may replace the role "laroueverte.groundzero.common" with laroueverte.groundzero.ovh_dedicated
+    - laroueverte.groundzero.common
+    - laroueverte.groundzero.letsencrypt
+    - laroueverte.groundzero.apache
+    - laroueverte.groundzero.apache_vhosts
+    - laroueverte.groundzero.postgresql
+    - laroueverte.groundzero.postgresql_db
+    - mycompany

@@ -1,0 +1,79 @@
+---
+- name: Install dependencies
+  apt: 
+    state: present 
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - bzip2
+    - build-essential
+    - tcl
+    - python3-pip
+    - apache2
+    
+- import_tasks: addok_apache_conf.yml
+  tags: 
+    - addok_apache_conf
+
+- name: Install virtualenv via pip
+  pip: name=virtualenv extra_args="--break-system-packages"
+
+- name: create addok configuration folder
+  file: 
+    path: /etc/addok
+    owner: addok
+    group: addok
+    state: directory
+    
+- name: create addok log folder
+  file: 
+    path: /var/log/addok
+    owner: addok
+    group: addok
+    state: directory
+    
+- name: Install Addok, using pip
+  pip:
+    name: addok
+    virtualenv_python: python3
+    virtualenv: /etc/addok/venv
+  become: yes
+  become_user: addok
+
+- name: Install Addok-fr, using pip
+  pip:
+    name: addok-fr
+    virtualenv_python: python3
+    virtualenv: /etc/addok/venv 
+  become: yes
+  become_user: addok
+    
+- name: Install Addok-france, using pip
+  pip:
+    name: addok-france
+    virtualenv_python: python3
+    virtualenv: /etc/addok/venv 
+  become: yes
+  become_user: addok
+ 
+- name: Add service unit
+  copy: src=lib/systemd/system/addok.service dest=/lib/systemd/system/addok.service
+
+- name: Configure logrotate for addok
+  template: src=logrotate-addok.j2 dest=/etc/logrotate.d/addok
+  
+- name: Enable logrotate for addok
+  file: dest={{ item }} state=touch owner=addok group=addok
+  with_items:
+    - /var/log/addok/addok.log
+    - /var/log/addok/queries.log
+    - /var/log/addok/ROTATEME.addok
+    - /var/log/addok/ROTATEME.queries
+ 
+- name: Add Addok configuration file
+  copy: src=etc/addok/addok.conf dest=/etc/addok/addok.conf owner=addok
+
+- name: Install Addok service
+  service: name=addok enabled=yes state=started
+  
+ 

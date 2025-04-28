@@ -1,0 +1,36 @@
+---
+- name: Install gnupg
+  apt: name=gnupg
+
+- name: Install the key for adoptium
+  get_url: url=https://packages.adoptium.net/artifactory/api/gpg/key/public dest=/etc/apt/trusted.gpg.d/adoptium.asc
+
+- name: Copy adoptium apt file
+  ansible.builtin.template:
+    src: etc/apt/sources.list.d/adoptium.list.j2
+    dest: /etc/apt/sources.list.d/adoptium.list
+    mode: 0600
+
+- name: Update APT Cache
+  apt: update_cache=yes
+
+- name: Install temurin-{{install_java_version}}-jdk
+  apt: name=temurin-{{install_java_version}}-jdk
+
+- name: Copy additional cacertificate
+  copy: src={{java_cacert_additional.src}} dest=/root/java{{install_java_version}}-cacert_additional{{java_cacert_additional.name}}.der
+  when: java_cacert_additional is defined
+
+- name: Adds additional cacertificate to cacerts
+  java_cert:
+    keystore_path: "/usr/lib/jvm/temurin-{{ install_java_version }}-jdk-amd64/lib/security/cacerts"
+    keystore_pass: changeit
+    cert_path: /root/java{{install_java_version}}-cacert_additional{{ java_cacert_additional.name }}.der
+    executable: /usr/bin/keytool
+    cert_alias: "{{java_cacert_additional.name}}"
+  when: java_cacert_additional is defined
+
+- name: Correct java version selected. This task is part of ansible-galaxy, if it fails, install it with "ansible-galaxy collection install community.general"
+  community.general.alternatives:
+    name: java
+    path: /usr/lib/jvm/temurin-{{install_java_version}}-jdk-amd64/bin/java

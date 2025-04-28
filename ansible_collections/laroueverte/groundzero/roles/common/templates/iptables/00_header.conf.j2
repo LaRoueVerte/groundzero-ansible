@@ -1,0 +1,4 @@
+*filter
+
+#Autoriser connexion sortantes (deja initiees). RELATED supprimé (cf https://gist.github.com/azlux/6a70bd38bb7c525ab26efe7e3a7ea8ac)
+-A INPUT -i {{ansible_default_ipv4.alias}} -m conntrack --ctstate ESTABLISHED -j ACCEPT

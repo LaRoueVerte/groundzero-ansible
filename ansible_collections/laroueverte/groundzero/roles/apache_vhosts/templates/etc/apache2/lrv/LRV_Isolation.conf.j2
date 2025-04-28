@@ -1,0 +1,25 @@
+<Directory "/var/www/isolation">
+        Order Deny,Allow
+        Allow from All
+       <FilesMatch "\.(html|ico)$">
+               FileETag None
+               <IfModule mod_headers.c>
+                   Header unset ETag
+                   Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+                   Header set Pragma "no-cache"
+                   Header set Expires "Wed, 12 Jan 1980 05:00:00 GMT"
+               </IfModule>
+       </FilesMatch>
+</Directory>
+
+Alias /isolation/ "/var/www/isolation/"
+
+
+{% for isolated_authorized_ip in apache_vhosts_isolated_authorized_ips %} 
+RewriteCond %{HTTP:X-Forwarded-For} !{{ isolated_authorized_ip }}
+RewriteCond %{REMOTE_ADDR} !{{ isolated_authorized_ip }}
+{% endfor %}
+RewriteCond %{REQUEST_URI} !^/isolation/
+RewriteRule (.*)  /isolation/index.html [PT,L]
+
+JkUnMount /isolation/* loadbalancer1

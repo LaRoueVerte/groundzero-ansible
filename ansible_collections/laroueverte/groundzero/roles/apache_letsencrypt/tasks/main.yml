@@ -1,0 +1,13 @@
+---
+
+# Enabled let's encrypt client.
+# Copies the common vhost part, ready to be used by a vhost.
+# This role prepares files and packages needed by letsencrypt. Nothing is enabled.
+
+#################################
+# Parameters : 
+# - apache_letsencrypt_domains_main  :  defines the main domain used to create the letsencrypt certificate
+# - apache_letsencrypt_domains_others :  defines comma separated list of alternative domains used to create the letsencrypt certificate
+
+- include: apache_letsencrypt.yml
+  tags: apache_letsencrypt

@@ -1,0 +1,7 @@
+---
+
+- name: Creates parking directory
+  file: dest=/var/www/parking state=directory
+  
+- name: copy common parking vhost file
+  copy: src=etc/apache2/lrv/LaRoueVerte_Parking_Common.conf dest=/etc/apache2/lrv/LaRoueVerte_Parking_Common.conf

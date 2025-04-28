@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DEBUG=
+if [[ $1 = "--test" ]]; then
+	DEBUG=echo 
+	shift
+fi
+
+RESPONSE=
+while [[ "${RESPONSE}" != "OK" ]]; do
+	echo "{{reboot_protection_message}}"
+	echo "Saisir OK pour continuer ou ctrl-c pour abandonner"
+	read -r RESPONSE;
+done
+
+echo "Le serveur va redémarrer dans 3 secs..."
+sleep 3s
+$DEBUG /sbin/reboot "$@" &
+echo "Reboot demandé !"

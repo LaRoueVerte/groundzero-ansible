@@ -1,0 +1,19 @@
+[Unit]
+Description=Tomcat{{tomcat_instance}} service
+ConditionPathExists=/home/tomcat/servers/{{tomcat_instance}}/current
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/share/tomcat8/bin/catalina.sh start
+Environment=CATALINA_PID=/run/tomcat/tomcat{{tomcat_instance}} CATALINA_BASE=/home/tomcat/servers/{{tomcat_instance}}/current
+Type=forking
+PIDFile=/run/tomcat/tomcat{{tomcat_instance}}
+ExecStop=/usr/share/tomcat8/bin/catalina.sh stop
+User=tomcat
+PermissionsStartOnly=true
+ExecStartPre=/usr/bin/install -o tomcat -g tomcat -d /run/tomcat
+
+[Install]
+WantedBy=basic.target
+

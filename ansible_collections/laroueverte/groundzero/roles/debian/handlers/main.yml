@@ -1,0 +1,5 @@
+---
+
+- name: launch updatedb
+  shell: updatedb
+

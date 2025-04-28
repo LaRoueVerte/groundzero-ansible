@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ case $1 in
+    start)
+    	rm /etc/iptables.v2.up.rules || exit 1
+    	touch /etc/iptables.v2.up.rules || exit 1
+        for a in $(ls -1 /etc/iptables.d/*.conf /etc/iptables.d/*.sh);do if [[ $a =~ ^.*sh$ ]];then $a >> /etc/iptables.v2.up.rules; else cat $a >> /etc/iptables.v2.up.rules ;fi ;done  || exit 1
+        /sbin/iptables-restore --test < /etc/iptables.v2.up.rules && /sbin/iptables-restore < /etc/iptables.v2.up.rules || exit 1
+        ;;
+    save)
+        /sbin/iptables-save > /etc/iptables.v2.up.rules.new
+        ;;
+    *)
+        echo "Unkown action '$1'"
+        ;;
+ esac

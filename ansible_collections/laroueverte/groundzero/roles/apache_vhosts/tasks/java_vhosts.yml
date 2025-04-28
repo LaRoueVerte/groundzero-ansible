@@ -1,0 +1,44 @@
+---
+
+- name: Copy Isolation template
+  template: src=etc/apache2/lrv/LRV_Isolation.conf.j2 dest=/etc/apache2/lrv/LRV_Isolation.conf
+  notify: apache_restart
+
+- name: Create isolation file directory
+  file: path=/var/www/isolation/ state=directory
+
+- name: Copy isolation file
+  copy: src=var/www/isolation/index.html dest=/var/www/isolation/index.html
+ 
+- name: Template Vhost Common template
+  template: src=etc/apache2/lrv/LRV_Vhost_Common.conf.j2 dest=/etc/apache2/lrv/LRV_Vhost_Common.conf
+  notify: apache_restart
+
+- name: Template Vhost Common template (no jk version)
+  template: src=etc/apache2/lrv/LRV_Vhost_Common_nojk.conf.j2 dest=/etc/apache2/lrv/LRV_Vhost_Common_nojk.conf
+  notify: apache_restart
+
+- name: Creates /etc/apache2/lrv/
+  file: path=/etc/apache2/lrv/ state=directory
+  notify: apache_restart
+
+- name: Copy etc/apache2/lrv/LRV_Vhost1_Common.conf
+  copy: src=etc/apache2/lrv/LRV_Vhost1_Common.conf dest=/etc/apache2/lrv/LRV_Vhost1_Common.conf
+  notify: apache_restart
+
+- name: Copy etc/apache2/lrv/LRV_Vhost2_Common.conf
+  copy: src=etc/apache2/lrv/LRV_Vhost2_Common.conf dest=/etc/apache2/lrv/LRV_Vhost2_Common.conf
+  notify: apache_restart
+
+- name: Enables ssl in apache2 required for generating default ssl vhost selfsigned
+  apache2_module: state=present name=ssl
+  when: apache_vhosts_default404 is defined
+  notify: apache_restart
+  
+- name: Copy default vhost 000_default.conf that will cause 404 for all unknown domains (selfsigned certificate is required here)
+  copy: src=etc/apache2/sites-enabled/000_default.conf dest=/etc/apache2/sites-enabled/000_default.conf
+  when: apache_vhosts_default404 is defined
+  notify: apache_restart
+  
+- meta: flush_handlers    
+

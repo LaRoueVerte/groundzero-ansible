@@ -1,0 +1,9 @@
+---
+
+- lineinfile: dest=/etc/bash.bashrc line="alias ls='ls --color=auto'"
+- lineinfile: dest=/etc/bash.bashrc line="alias ll='ls -al'"
+- lineinfile: dest=/etc/bash.bashrc line="export HISTTIMEFORMAT='%F %T '"
+
+- name: create debian_chroot file
+  template: src=etc/debian_chroot dest=/etc/debian_chroot
+

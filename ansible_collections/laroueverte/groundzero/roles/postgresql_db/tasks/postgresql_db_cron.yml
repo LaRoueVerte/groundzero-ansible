@@ -1,0 +1,10 @@
+---
+
+- name: Install cron if there is replication
+  cron: user=transfert name="PG Nightly Maintenance" minute="{{postgresql_db_nightly_maintenance_minute}}" hour="{{postgresql_db_nightly_maintenance_hour}}" job="test -e /home/postgresql/{{postgresql_version}}/PRIMARY -o -e /home/postgresql/{{postgresql_version}}/PRIMARY_DESYNC && /home/root/scripts/transfert/postgresNightlyMaintenance.sh {{ postgresql_db_schema_name }} >> /var/log/transfert/transfert_cron_postgresNightlyMaintenance.log 2>&1"
+  when: postgresql_replication_on is defined and postgresql_replication_on
+
+- name: Install cron if there is no replication
+  cron: user=transfert  name="PG Nightly Maintenance" minute="{{postgresql_db_nightly_maintenance_minute}}" hour="{{postgresql_db_nightly_maintenance_hour}}" job="/home/root/scripts/transfert/postgresNightlyMaintenance.sh {{ postgresql_db_schema_name }} >> /var/log/transfert/transfert_cron_postgresNightlyMaintenance.log 2>&1"
+  when: not postgresql_replication_on is defined or not postgresql_replication_on
+  

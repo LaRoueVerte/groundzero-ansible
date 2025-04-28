@@ -1,0 +1,55 @@
+#Autoriser le ping par les serveurs ovh : https://docs.ovh.com/gb/en/dedicated/monitoring-ip-ovh/
+#ping.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 213.186.33.13 -j ACCEPT
+#proxy.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 213.186.50.98 -j ACCEPT
+#proxy.p19.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 213.186.45.4 -j ACCEPT
+#proxy.rbx.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 213.251.184.9 -j ACCEPT
+#proxy.sbg.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 37.59.0.235 -j ACCEPT
+#proxy.bhs.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 8.33.137.2 -j ACCEPT
+
+#netmon-rbx-probe
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 92.222.184.0/24 -j ACCEPT
+#netmon-sbg-probe
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 92.222.185.0/24 -j ACCEPT
+#netmon-gra-probe
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 92.222.186.0/24 -j ACCEPT
+#netmon-bhs-probe
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 167.114.37.0/24 -j ACCEPT
+#netmon-sgp-probe
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 139.99.1.144/28 -j ACCEPT
+
+#mrtg-rbx-101
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 151.80.231.244 -j ACCEPT
+#mrtg-rbx-102
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 151.80.231.245 -j ACCEPT
+#mrtg-rbx-103
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 151.80.231.246 -j ACCEPT
+#mrtg-gra-101
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 151.80.231.247 -j ACCEPT
+#mrtg-rbx-100, mrtg-sbg-100, mrtg-gra-100, mrtg-bhs-100
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 37.187.231.251 -j ACCEPT
+
+#a2.ovh.net
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source 213.186.33.62 -j ACCEPT
+
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{ansible_default_ipv4.address | regex_replace('^(.*)\.(.*)\.(.*)\.(.*)$','\\1.\\2.\\3.251')}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{ansible_default_ipv4.address | regex_replace('^(.*)\.(.*)\.(.*)\.(.*)$','\\1.\\2.\\3.250')}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{ansible_default_ipv4.address | regex_replace('^(.*)\.(.*)\.(.*)\.(.*)$','\\1.\\2.\\3.249')}} -j ACCEPT
+
+{% if icmp_ips is defined %}
+# Additionnal ping ips (mainly used by VPSes)
+{% for icmp_ip in icmp_ips %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{icmp_ip}} -j ACCEPT
+{% endfor %}
+{% endif %}
+
+#Autoriser le ping depuis nos IPs
+{% for iptables_ssh_client in all_whitelisted_ips %}
+#pour adsl lrv {{iptables_ssh_client}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{iptables_ssh_client}} -j ACCEPT
+{% endfor %}

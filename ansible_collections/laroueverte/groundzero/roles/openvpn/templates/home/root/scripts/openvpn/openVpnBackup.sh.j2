@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#### Open VPN DB and configuration backup script
+#### Refer to https://openvpn.net/vpn-server-resources/configuration-database-management-and-backups/#how-to-back-up-access-server-configuration
+cd
+
+. /home/root/scripts/base.sh
+showHeader
+
+startScript openVpnBackup
+
+TIMESTAMP=`date  +%Y-%m-%d`
+BACKUP_FILE_PREFIX=openvpn-backup
+BACKUP_FILENAME=$BACKUP_FILE_PREFIX-$TIMESTAMP.tar.gz
+LOCAL_BACKUP_FOLDER=/home/root/openvpn/backups/
+REMOTE_BACKUP_FOLDER=/home/transfert/open{{host_role}}/backups/
+REMOTE_SERVER={{openvpn_backup_server}}
+
+#Create local backup folder if needed
+mkdir -p $LOCAL_BACKUP_FOLDER
+
+#Backup db and configuration file
+cd /usr/local/openvpn_as/etc/db
+[ -e config.db ]&&sqlite3 config.db .dump>$LOCAL_BACKUP_FOLDER/config.db.bak
+[ -e certs.db ]&&sqlite3 certs.db .dump>$LOCAL_BACKUP_FOLDER/certs.db.bak
+[ -e userprop.db ]&&sqlite3 userprop.db .dump>$LOCAL_BACKUP_FOLDER/userprop.db.bak
+[ -e log.db ]&&sqlite3 log.db .dump>$LOCAL_BACKUP_FOLDER/log.db.bak
+[ -e config_local.db ]&&sqlite3 config_local.db .dump>$LOCAL_BACKUP_FOLDER/config_local.db.bak
+[ -e cluster.db ]&&sqlite3 cluster.db .dump>$LOCAL_BACKUP_FOLDER/cluster.db.bak
+[ -e clusterdb.db ]&&sqlite3 clusterdb.db .dump>$LOCAL_BACKUP_FOLDER/clusterdb.db.bak
+[ -e notification.db ]&&sqlite3 notification.db .dump>$LOCAL_BACKUP_FOLDER/notification.db.bak 
+cp ../as.conf $LOCAL_BACKUP_FOLDER/as.conf.bak
+
+#Tar and zip
+cd $LOCAL_BACKUP_FOLDER
+tar -zcvf $BACKUP_FILENAME *.bak
+
+#Keep 30 most recent backups locally
+/home/root/scripts/keepRecent/keepRecent.sh $LOCAL_BACKUP_FOLDER 30 $BACKUP_FILE_PREFIX .tar.gz
+testResult
+
+#Copy to remote backup server
+scp $LOCAL_BACKUP_FOLDER/$BACKUP_FILENAME transfert@$REMOTE_SERVER:$REMOTE_BACKUP_FOLDER/$BACKUP_FILENAME
+testResult
+
+#Keep 30 most recent backups on remote server
+ssh transfert@$REMOTE_SERVER /home/root/scripts/keepRecent/keepRecent.sh $REMOTE_BACKUP_FOLDER 30 $BACKUP_FILE_PREFIX .tar.gz
+testResult
+
+#Delete *.bak
+cd $LOCAL_BACKUP_FOLDER
+rm *.bak
+
+#Send to status to Zabbix
+endScript openVpnBackup
+echo 'OK' > $LOCAL_BACKUP_FOLDER/.BACKUP_STATUS

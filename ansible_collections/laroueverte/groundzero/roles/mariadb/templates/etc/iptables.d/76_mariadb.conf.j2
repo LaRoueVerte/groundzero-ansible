@@ -1,0 +1,9 @@
+
+#Autoriser les ports galera pour les membres du cluster (y compris ce noeud)
+{% for mariadb_cluster_member in mariadb_cluster_members %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 4567 --source {{mariadb_cluster_member}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p udp --dport 4567 --source {{mariadb_cluster_member}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 4568 --source {{mariadb_cluster_member}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 4444 --source {{mariadb_cluster_member}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 3306 --source {{mariadb_cluster_member}} -j ACCEPT
+{% endfor %}

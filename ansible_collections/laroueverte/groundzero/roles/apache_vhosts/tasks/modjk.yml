@@ -1,0 +1,88 @@
+---
+
+- name: Installs modjk
+  apt: name=libapache2-mod-jk state=present
+
+- name: Enables modjk in apache2
+  apache2_module: state=present name=jk
+
+- replace: dest=/etc/libapache2-mod-jk/workers.properties regexp=worker.list=.*$ replace=worker.list=loadbalancer1,loadbalancer2
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat0.port=8009
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat0.host=127.0.0.1 regexp="^worker.tomcat0.host="
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat0.type=ajp13
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat0.route=tomcat0
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat0.lbfactor=1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat1.port=18009
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat1.host=127.0.0.1 regexp="^worker.tomcat1.host="
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat1.type=ajp13
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat1.route=tomcat1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat1.lbfactor=1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat2.port=28009
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat2.host=127.0.0.1 regexp="^worker.tomcat2.host="
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat2.type=ajp13
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat2.route=tomcat2
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat2.lbfactor=1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat3.port=38009
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat3.host=127.0.0.1 regexp="^worker.tomcat3.host="
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat3.type=ajp13
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat3.route=tomcat3
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.tomcat3.lbfactor=1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.loadbalancer1.balance_workers=tomcat0,tomcat1
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.loadbalancer1.type=lb
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.loadbalancer2.balance_workers=tomcat2,tomcat3
+  notify: apache_restart
+
+- lineinfile: dest=/etc/libapache2-mod-jk/workers.properties line=worker.loadbalancer2.type=lb
+  notify: apache_restart
+
+- lineinfile: dest=/etc/apache2/mods-available/jk.conf regexp="^\s+JkLogFile.*" line='    JkLogFile "| /usr/sbin/vlogger -e -s mod_jk.log -t mod_jk-%Y-%m-%d.log -f 30 /var/log/apache2'
+  notify: apache_restart
+
+- meta: flush_handlers    
+
+ 

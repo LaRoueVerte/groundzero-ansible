@@ -1,0 +1,11 @@
+---
+
+dependencies:
+  - {role: apache}
+  - {role: letsencrypt,
+         letsencrypt_domains_main: {{zabbix_domain}},
+         letsencrypt_checkcertificate: true
+  }
+  - {role: postgresql, password: secure, repository: debian}
+  
+  

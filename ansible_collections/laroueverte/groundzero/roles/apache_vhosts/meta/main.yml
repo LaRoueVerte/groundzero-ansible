@@ -1,0 +1,5 @@
+---
+
+dependencies:
+  - { role: apache_ssl, when: "apache_java_letsencrypt is defined" }
+  - { role: letsencrypt, when: "apache_java_letsencrypt is defined" }

@@ -1,0 +1,25 @@
+---
+
+- name: Add SSH authorization
+  authorized_key: user=transfert key="{{item}}"
+  with_file:
+    - "{{ role_path }}/../../data/{{ postgresql_master_hostname}}/home/transfert/.ssh/id_rsa.pub"
+  
+- name: Install kill postgres connections script
+  copy: src=home/root/scripts/transfert/killPostgresConnections.sh dest=/home/root/scripts/transfert/killPostgresConnections.sh owner=transfert group=transfert mode=u+x
+  
+- name: Install PG DB create script
+  copy: src=home/root/scripts/transfert/createPostgresDatabase.sh dest=/home/root/scripts/transfert/createPostgresDatabase.sh owner=transfert group=transfert mode=u+x
+
+- name: Install DB install from backup server script
+  copy: src=home/root/scripts/transfert/installDBFromBackupServer.sh dest=/home/root/scripts/transfert/installDBFromBackupServer.sh group=transfert owner=transfert mode=0755
+  
+- name: Install PG DB Backup and Rsync script
+  copy: src=home/root/scripts/transfert/backupPostgresRsync.sh dest=/home/root/scripts/transfert/backupPostgresRsync.sh owner=transfert group=transfert mode=u+x
+  
+- name: Install PG DB Backup script
+  copy: src={{ role_path }}/../../roles/postgresql_backup_master/files/home/root/scripts/transfert/backupPostgres.sh dest=/home/root/scripts/transfert/backupPostgres.sh owner=transfert group=transfert mode=u+x
+
+- name: Install PG DB replication script
+  copy: src={{ role_path }}/../../roles/postgresql_backup_master/files/home/root/scripts/transfert/replicationPostgresDB.sh dest=/home/root/scripts/transfert/replicationPostgresDB.sh owner=transfert group=transfert mode=u+x
+  

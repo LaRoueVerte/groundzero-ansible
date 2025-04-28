@@ -1,0 +1,33 @@
+---
+
+- name: create {{ postgresql_db_schema_name }} database
+  apt: name=python3-psycopg2 state=present
+
+- postgresql_db: login_user=postgres name={{ postgresql_db_schema_name }} encoding=UTF8 port={{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}
+  register: createddb
+
+- name: Add postgis extension (if following fails, change postgresql_ext.py line 288 with  if (line[0]!='unpackaged' and LooseVersion(line[0]) > LooseVersion(current_version)) (add -vvv to see details)
+  postgresql_ext: login_user=postgres name=postgis db={{ postgresql_db_schema_name }} port={{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}
+  when: postgresql_postgis_version != "NONE"
+
+- name: Add postgis_topology extension (if following fails, change postgresql_ext.py line 288 with  if (line[0]!='unpackaged' and LooseVersion(line[0]) > LooseVersion(current_version)) (add -vvv to see details)
+  postgresql_ext: login_user=postgres name=postgis_topology db={{ postgresql_db_schema_name }} port={{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}
+  when: postgresql_postgis_version != "NONE"
+
+- name: install additionnal extensions (if following fails, change postgresql_ext.py line 288 with  if (line[0]!='unpackaged' and LooseVersion(line[0]) > LooseVersion(current_version)) (add -vvv to see details)
+  postgresql_ext: login_user=postgres name={{item}} db={{ postgresql_db_schema_name }} port={{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}
+  with_items: "{{postgresql_db_extensions}}"
+  when: postgresql_db_extensions is defined
+
+- command: psql -U postgres {{ postgresql_db_schema_name }} -p {{(postgresql_port is defined)|ternary(postgresql_port, '5432')}} -c 'GRANT ALL ON TABLE spatial_ref_sys to "{{postgresql_application_user}}"';
+  when: createddb.changed and postgresql_postgis_version != "NONE"
+
+- file: state=directory dest=/home/transfert/{{ postgresql_db_schema_name }}/versions owner=transfert group=transfert
+
+- file: state=directory dest=/home/transfert/{{ postgresql_db_schema_name }}/backups owner=transfert group=transfert
+
+- name: Remove execute rights on /usr/bin/psql to adm group if log reader is enabled (for existing files)
+  acl: entity=adm etype=group path=/usr/bin/psql permissions=r state=present
+  when: logreader_enabled is defined and logreader_enabled
+  tags: system_acl
+         

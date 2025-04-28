@@ -1,0 +1,67 @@
+---
+
+- name: 'Install SSHD files'
+  replace: dest=/etc/pam.d/sshd regexp='^\#\s+account\s+required\s+pam_access.so$' replace='account  required     pam_access.so'
+  notify: 
+    sshd restart
+
+- lineinfile: dest=/etc/ssh/sshd_config regexp="^\#?ChallengeResponseAuthentication\s+" line="ChallengeResponseAuthentication no"
+  when: ssh_disable_password_authentication is defined
+  notify: 
+    sshd restart
+
+- lineinfile: dest=/etc/ssh/sshd_config regexp="^\#?PasswordAuthentication\s+" line="PasswordAuthentication no"
+  when: ssh_disable_password_authentication is defined
+  notify: 
+    sshd restart
+
+- lineinfile: dest=/etc/ssh/sshd_config regexp="^\#?UsePAM\s+" line="UsePAM yes"
+  notify: 
+    sshd restart
+
+- name: 'Disable UseDns For Ansible and for https://unix.stackexchange.com/questions/56941/what-is-the-point-of-sshd-usedns-option'    
+  lineinfile: dest=/etc/ssh/sshd_config regexp="^\#?UseDns\s+" line="UseDns no"
+  notify: 
+    sshd restart
+
+- name: add our IPs and ovh IPs allowed to login remotely as root
+  lineinfile: dest=/etc/security/access.conf regexp='^\+:root:' line='+:root:localhost {{ovh_dedicated_ips | join(' ')}} {{all_whitelisted_ips|join(' ')}} {{ssh_additionnal_hosts is defined | ternary(ssh_additionnal_hosts,'')}}'
+  when: not common_ssh_root_restricted is defined or common_ssh_root_restricted
+  notify: 
+    sshd restart
+
+- name: add our IPs and ovh IPs allowed to login remotely as root
+  lineinfile: dest=/etc/security/access.conf regexp='^\+:root:' line='+:root:ALL'
+  when: common_ssh_root_restricted is defined and not common_ssh_root_restricted
+  notify: 
+    sshd restart
+
+- lineinfile: "dest=/etc/security/access.conf line=+:transfert:{{hostsdata[postgresql_master_hostname].ip}} insertbefore='- : ALL :  ALL'"
+  when: postgresql_master_hostname is defined 
+  notify: 
+    sshd restart
+
+- lineinfile: "dest=/etc/security/access.conf line=+:transfert:{{ssh_transfert_hosts}} insertbefore='- : ALL :  ALL'"
+  when: ssh_transfert_hosts is defined 
+  notify: 
+    sshd restart
+
+- name: Add {{ ssh_additionnal_user }}
+  lineinfile: 'dest=/etc/security/access.conf regexp="^\+:{{ ssh_additionnal_user }}:" line="+:{{ ssh_additionnal_user }}:{{ssh_additionnal_user_ips}}" insertbefore="- : ALL :  ALL"'
+  when: ssh_additionnal_user is defined
+  notify: 
+    sshd restart
+
+- lineinfile: 'dest=/etc/security/access.conf line="- : ALL :  ALL" insertafter=EOF' 
+  notify: 
+    sshd restart
+    
+- include_tasks: ssh_user.yml
+  when: ssh_additionnal_users is defined
+  with_items: "{{ssh_additionnal_users}}"
+  loop_control:
+    loop_var: ssh_user
+
+- meta: flush_handlers    
+    
+    

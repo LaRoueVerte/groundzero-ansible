@@ -1,0 +1,26 @@
+---
+- name: Install PG Backup scripts 
+  copy: src=home/root/scripts/transfert/backupPostgres.sh dest=/home/root/scripts/transfert/backupPostgres.sh group=transfert owner=transfert mode=0755
+
+- name: Install PG Replication scripts 
+  copy: src=home/root/scripts/transfert/replicationPostgresDB.sh dest=/home/root/scripts/transfert/replicationPostgresDB.sh group=transfert owner=transfert mode=0755
+
+- name: Create transfert log folder
+  file: path=/var/log/transfert state=directory group=transfert owner=transfert
+
+- name: Install zabbix sender needed for sending backup result to zabbix
+  apt: name=zabbix-sender state=present
+
+- name: Touch transfert_cron_backupPostgresHourly.log
+  file: path=/var/log/transfert/transfert_cron_backupPostgresHourly.log owner=transfert group=transfert state=touch 
+
+- name: Copy replicate from recipient script 
+  copy: src=home/root/scripts/transfert/replicateFromRecipient.sh dest=/home/root/scripts/transfert/replicateFromRecipient.sh group=transfert owner=transfert mode=0755
+
+- name: Copy check from recipient script 
+  copy: src=home/root/scripts/transfert/checkFromRecipient.sh dest=/home/root/scripts/transfert/checkFromRecipient.sh group=transfert owner=transfert mode=0755
+
+- name: Install PG DB create script
+  copy: src=home/root/scripts/transfert/createPostgresDatabase.sh dest=/home/root/scripts/transfert/createPostgresDatabase.sh owner=transfert group=transfert mode=0755
+
+  

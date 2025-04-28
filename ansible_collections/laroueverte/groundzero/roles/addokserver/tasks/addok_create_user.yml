@@ -1,0 +1,5 @@
+---
+
+- name: create addok account
+  user: name=addok state=present shell=/bin/bash
+    

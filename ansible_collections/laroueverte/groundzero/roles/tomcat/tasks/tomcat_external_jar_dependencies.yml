@@ -1,0 +1,7 @@
+---
+
+- name: Copy postgres library
+  copy: src=home/tomcat/servers/postgresql-42.5.1.jar dest=/home/tomcat/servers/postgresql-42.5.1.jar owner=tomcat group=tomcat
+  
+- name: Copy postgis library
+  copy: src=home/tomcat/servers/postgis-jdbc-2.2.1.jar dest=/home/tomcat/servers/postgis-jdbc-2.2.1.jar owner=tomcat group=tomcat

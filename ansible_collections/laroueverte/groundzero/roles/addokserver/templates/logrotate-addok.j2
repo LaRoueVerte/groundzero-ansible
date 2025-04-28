@@ -1,0 +1,21 @@
+/var/log/addok/addok*.log {
+        create 700 addok addok
+        daily
+        rotate 400
+        dateext
+        dateformat .%Y-%m-%d
+        dateyesterday
+        extension .out
+        copytruncate
+}
+
+/var/log/addok/queries*.log {
+        create 700 addok addok
+        daily
+        rotate 400
+        dateext
+        dateformat .%Y-%m-%d
+        dateyesterday
+        extension .out
+        copytruncate
+}

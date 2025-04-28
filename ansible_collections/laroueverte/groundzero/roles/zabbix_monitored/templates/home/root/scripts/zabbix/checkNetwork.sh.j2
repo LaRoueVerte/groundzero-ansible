@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# -ne 2 ];then
+        echo "Usage : $0 networkInteface in/out"
+        exit 1;
+fi
+INTERFACE="{{ansible_default_ipv4.alias}}"
+if [ "$1" == "lo" ];then
+        INTERFACE="lo"
+fi
+if [ "$2" == "in" ];then 
+        grep $INTERFACE /proc/net/dev | awk -F " " '{print $2}'
+else
+        grep $INTERFACE /proc/net/dev | awk -F " " '{print $10}'
+fi

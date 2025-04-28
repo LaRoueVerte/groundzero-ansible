@@ -1,0 +1,10 @@
+
+
+#Autoriser les connexions nfs pour le raid depuis le reseau local
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --source 192.168.0.0/16 -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p udp --source 192.168.0.0/16 -j ACCEPT
+
+#pour ip OVH clé SSH
+{% for ovh_ssh_ip in ovh_dedicated_ips %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 22 --source {{ovh_ssh_ip}} -j ACCEPT
+{% endfor %}

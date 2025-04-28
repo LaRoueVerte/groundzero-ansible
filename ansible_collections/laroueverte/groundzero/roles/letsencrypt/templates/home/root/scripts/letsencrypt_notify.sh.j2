@@ -1,0 +1,30 @@
+#!/bin/bash
+cd `dirname $0`
+. /home/root/scripts/base.sh
+
+
+{% if letsencrypt_autoreload is defined and letsencrypt_autoreload %}
+	{% if letsencrypt_autoreload_gitlabnginx is defined and letsencrypt_autoreload_gitlabnginx %}
+		gitlab-ctl restart nginx
+		testResult
+	{% else %}
+		{% if letsencrypt_autoreload_openvpn is defined and letsencrypt_autoreload_openvpn %}
+				/usr/local/openvpn_as/scripts/sacli --key "cs.priv_key" --value_file "$RENEWED_LINEAGE/privkey.pem" ConfigPut
+				/usr/local/openvpn_as/scripts/sacli --key "cs.cert" --value_file "$RENEWED_LINEAGE/fullchain.pem" ConfigPut
+				/usr/local/openvpn_as/scripts/sacli start
+		{% else %}
+			/usr/sbin/apachectl configtest
+			testResult
+		
+			systemctl reload apache2 2>&1
+			testResult
+		{% endif %}
+	{% endif %}
+{% else %}
+	{% if letsencrypt_autoreload_gitlabnginx is defined and letsencrypt_autoreload_gitlabnginx %}
+		echo "ok" | mail -s "New certificate for $RENEWED_LINEAGE : Please configtest and reload nginx manually (gitlab-ctl restart nginx). " {{common_monitoring_email}}
+	{% else %}
+		echo "ok" | mail -s "New certificate for $RENEWED_LINEAGE : Please configtest and reload apache manually. " {{common_monitoring_email}}
+	{% endif %}
+		
+{% endif %}

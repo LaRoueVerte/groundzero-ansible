@@ -1,0 +1,138 @@
+---
+- name: install apache apt 
+  apt: name=apache2 state=present
+
+- name: Let apache listen only on ipv4/v6 port 80
+  replace: path=/etc/apache2/ports.conf replace='Listen 80' regexp='Listen\s+(0\.0\.0\.0:)?80'
+  when: apache_ipv6 is defined and apache_ipv6
+  notify: apache_restart
+  
+- name: Let apache listen only on ipv4/v6 port 443
+  replace: path=/etc/apache2/ports.conf replace='Listen 443' regexp='Listen\s+(0\.0\.0\.0:)?443'
+  when: apache_ipv6 is defined and apache_ipv6
+  notify: apache_restart
+
+- name: Let apache listen only on ipv4 port 80
+  replace: path=/etc/apache2/ports.conf replace='Listen 0.0.0.0:80' regexp='Listen\s+(0\.0\.0\.0:)?80'
+  when: not apache_ipv6 is defined or not apache_ipv6
+  notify: apache_restart
+  
+- name: Let apache listen only on ipv4 port 443
+  replace: path=/etc/apache2/ports.conf replace='Listen 0.0.0.0:443' regexp='Listen\s+(0\.0\.0\.0:)?443'
+  when: not apache_ipv6 is defined or not apache_ipv6
+  notify: apache_restart
+
+- file: dest=/var/log/apache2/vlogs state=directory
+- file: dest=/var/log/apache2/vlogs/all.80 state=directory
+
+- name: Remove apache version
+  lineinfile: dest=/etc/apache2/conf-enabled/security.conf regexp='^ServerTokens\s+' line='ServerTokens Prod'
+  notify: apache_restart
+
+- name: Enables rewrite in apache2
+  apache2_module: state=present name=rewrite
+  notify: apache_restart
+
+- name: Enables mod_headers in apache2
+  apache2_module: state=present name=headers
+  notify: apache_restart
+  
+- name: Enables mod_substitute in apache2
+  apache2_module: state=present name=substitute
+  notify: apache_restart
+  when: apache_substitute is defined and apache_substitute
+
+- name: Install libapache2-mod-rpaf in case of reverse_proxy (like behind another apache or an OVH load balancer)
+  apt: name=libapache2-mod-rpaf state=present
+  when: apache_reverse_proxy is defined
+  notify: apache_restart
+
+- name: Enables libapache2-mod-rpaf
+  apache2_module: state=present name=rpaf
+  when: apache_reverse_proxy is defined
+  notify: apache_restart
+  
+- name: Changes source ip if reverse_proxy
+  lineinfile: dest=/etc/apache2/mods-enabled/rpaf.conf regexp='^\s+RPAFproxy_ips\s+' line='    RPAFproxy_ips {{apache_reverse_proxy}}'  
+  when: apache_reverse_proxy is defined
+  notify: apache_restart
+
+- name: Create /etc/apache2/lrv 
+  file: path=/etc/apache2/lrv/ state=directory
+  notify: apache_restart
+
+- name: copy lrv's log file conf (defines LogFormat directives)
+  copy: src=etc/apache2/lrv/log.conf dest=/etc/apache2/lrv/log.conf
+  notify: apache_restart
+  
+- name: Adds default logger
+  lineinfile: dest="/etc/apache2/apache2.conf" insertafter='^LogFormat' line='Include /etc/apache2/lrv/log.conf'
+  notify: apache_restart
+
+- name: copy lrv's log file conf (defines CustomLog directives)
+  copy: src=etc/apache2/conf-enabled/other-vhosts-access-log.conf dest=/etc/apache2/conf-enabled/other-vhosts-access-log.conf
+  notify: apache_restart
+
+- name: Deactivate standard logrotatation from debian
+  file: dest=/etc/logrotate.d/apache2 state=absent
+  
+- name: Copy our rotation script
+  copy: src=home/root/scripts/rotateApacheLogsDaily.sh dest=/home/root/scripts/rotateApacheLogsDaily.sh mode=700  
+
+- name: Creates dir for rsyncbackup scripts
+  file: name=/home/root/scripts/rsyncbackup state=directory
+  when: apache_backuplogs is defined 
+  
+- name: Copy our rsync script
+  copy: src=../cifs_backup_client/files/home/root/scripts/rsyncbackup/rsyncbackup.sh dest=/home/root/scripts/rsyncbackup/rsyncbackup.sh mode=700  
+  when: apache_backuplogs is defined 
+
+- name: Install rsync if needed
+  apt: name=rsync state=present
+  when: apache_backuplogs is defined 
+
+- name: Install apache log rotation cron without backup
+  cron: state=present user=root name="Apache Log Rotation" minute='05' hour='03' job="/home/root/scripts/rotateApacheLogsDaily.sh rotateApacheLogs >> /var/log/root/root_cron_backupRotateApacheLogsDaily.log 2>&1"
+  when: apache_backuplogs is not defined
+  tags: 
+    - system_cron
+  
+- name: Install apache log rotation cron with backup to {{apache_backuplogs}}
+  cron: state=present user=root name="Apache Log Rotation" minute='05' hour='03' job="/home/root/scripts/rotateApacheLogsDaily.sh rotateApacheLogs true {{apache_backuplogs}} >> /var/log/root/root_cron_backupRotateApacheLogsDaily.log 2>&1"
+  when: apache_backuplogs is defined 
+  tags: 
+    - system_cron
+
+- name: Copy apache2 zabbix items configuration
+  copy: src=etc/zabbix/zabbix_agentd.conf.d/apache2.conf dest=/etc/zabbix/zabbix_agentd.conf.d/
+  notify: restart zabbix agent
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+  
+- name: Install apache2-zabbix sudoers file
+  copy: src=etc/sudoers/apache2zabbix dest=/etc/sudoers.d/apache2zabbix mode=440
+
+- name: Copy zabbix monitoring scripts for apache
+  copy: src=home/root/scripts/zabbix/getApacheInfo.sh dest=/home/root/scripts/zabbix/ mode=755
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+  
+- name: Install curl needed by parseApache.pl
+  apt: name=curl state=present  
+  
+- name: Copy zabbix monitoring script for parsing apache status
+  copy: src=home/root/scripts/zabbix/parseApache.pl dest=/home/root/scripts/zabbix/ mode=755
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+
+- name: Copy zabbix monitoring script for checking bad zombie subprocesses
+  copy: src=home/root/scripts/zabbix/checkApacheZombies.sh dest=/home/root/scripts/zabbix/ mode=755
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+
+- name: Copy script to get Apache logs errors
+  copy: src=home/root/scripts/getApacheErrors.sh dest=/home/root/scripts/getApacheErrors.sh mode=700  
+
+- name: Enables mod_status in apache2
+  apache2_module: state=present name=status
+  notify: apache_restart
+
+  
+- meta: flush_handlers    
+

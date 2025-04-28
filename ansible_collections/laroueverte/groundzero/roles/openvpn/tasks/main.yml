@@ -1,0 +1,29 @@
+---
+#################################
+# Role installing :
+# - openvpn
+
+#################################
+# Dependencies : 
+
+#################################
+# Parameters : 
+# - openvpn_cron_minute: the crontab minute parameter to restart daemon
+# - openvpn_cron_minute: the crontab hour parameter to restart daemon
+# - openvpn_cron_enabled: if true, the daemon will restart periodically using a crontab
+# - openvpn_backup_enabled: if true, the sqlite files will be backed up using a crontab
+
+- include: openvpn.yml
+  tags:
+   - openvpn
+   
+- include: openvpn_backup.yml
+  tags:
+   - openvpn
+   - openvpnbackup   
+   
+- include: openvpn_cron.yml
+  tags:
+   - openvpn
+   - openvpnbackup 
+   - system_cron     

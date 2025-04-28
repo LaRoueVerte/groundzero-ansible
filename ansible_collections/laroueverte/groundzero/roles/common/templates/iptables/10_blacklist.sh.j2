@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "#========================================"
+echo "#Blacklist from /etc/firewall.blacklist"
+for a in `cat /etc/firewall.blacklist`; do
+        echo -A INPUT -i {{ansible_default_ipv4.alias}}  --source $a -j DROP
+done
+echo 
+echo
+

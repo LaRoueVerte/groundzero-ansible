@@ -1,0 +1,21 @@
+---
+
+# Launch certbot
+- import_tasks: ../../letsencrypt/tasks/letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ apache_java_vhost.servername }}"
+  when: not apache_java_vhost.serveralias is defined
+  tags:
+    - letsencrypt
+    - apache_certbot
+    - apache_vhosts
+
+- import_tasks: ../../letsencrypt/tasks/letsencrypt_dns.yml
+  vars:
+    letsencrypt_servername: "{{ apache_java_vhost.servername }}"
+    letsencrypt_serveralias: "{{ apache_java_vhost.serveralias }}"
+  when: apache_java_vhost.serveralias is defined
+  tags:
+    - letsencrypt
+    - apache_certbot
+    - apache_vhosts

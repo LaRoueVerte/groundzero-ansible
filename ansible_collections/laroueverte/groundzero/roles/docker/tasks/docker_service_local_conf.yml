@@ -1,0 +1,7 @@
+---
+- name: Create directory for service conf  
+  file: dest=/etc/systemd/system/docker.service.d state=directory
+  
+- name: Ensure docker daemon is restarted if iptables restarts
+  copy: src=etc/systemd/system/docker.service.d/iptables.dependency.conf dest=/etc/systemd/system/docker.service.d/iptables.dependency.conf
+  notify: systemd reload

@@ -1,0 +1,10 @@
+[Unit]
+Description=Addok Service
+ 
+[Service]
+ExecStart=/etc/addok/venv/bin/addok serve
+StandardOutput=null
+ 
+[Install]
+WantedBy=multi-user.target
+Alias=addok.service

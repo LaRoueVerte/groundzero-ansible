@@ -1,0 +1,35 @@
+---
+- import_tasks: addok_create_user.yml
+  tags: 
+    - addok_server
+    - addok_server_create_user
+
+- import_tasks: addok_redis_install.yml
+  tags: 
+    - addok_server
+    - addok_server_redis_install
+    
+- import_tasks: addok_python35_install.yml
+  tags: 
+    - addok_server
+    - addok_server_python35_install
+
+- import_tasks: addok_install.yml
+  tags: 
+    - addok_server
+    - addok_server_install
+
+- import_tasks: addok_import_BAN.yml
+  tags: 
+    - addok_server
+    - addok_server_import_ban
+    
+- import_tasks: addok_start.yml
+  tags: 
+    - addok_server
+    - addok_server_start
+
+- import_tasks: addok_monitoring.yml
+  tags: 
+    - addok_server
+    - addok_server_monitoring

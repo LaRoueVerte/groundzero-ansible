@@ -1,0 +1,85 @@
+---
+
+- name: Check if current running postgresql is in recovery
+  postgresql_query:
+    db: postgres
+    login_user: postgres
+    query: select pg_is_in_recovery as recovery from pg_is_in_recovery();
+  register: checkrecovery
+
+- name: Create transfert user for replication
+  postgresql_user: login_user=postgres
+                   name=transfert
+                   password={{postgresl_password}}
+                   encrypted=yes
+                   role_attr_flags='LOGIN,REPLICATION'
+
+- name: Check if slot has been created
+  postgresql_query:
+    db: postgres
+    login_user: postgres
+    query: select count(*) as slotcount from pg_replication_slots where slot_name='{{postgresql_replication_slot_name}}';
+  register: checkslot
+
+- name: Create slot if needed, Will be skipped if postgresql is in recovery
+  postgresql_query:
+    db: postgres
+    login_user: postgres
+    query: select pg_create_physical_replication_slot('{{postgresql_replication_slot_name}}');
+  when: not checkrecovery.query_result[0] and checkslot.query_result[0].slotcount == 0
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#wal_level\s+=\s+" line="wal_level = replica"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#primary_conninfo\s+=\s" line="primary_conninfo = 'host={{hostsdata[postgresql_replication_pair_server].ip}} user=transfert password={{postgresql_application_password}}'"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#primary_slot_name\s+=\s" line="primary_slot_name = '{{postgresql_replication_slot_name}}'"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#wal_keep_size\s+=\s" line="wal_keep_size = 16"
+  notify: 
+    restart postgresql
+
+- name: Install pg_hba replication using ssl (hostssl)    
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/pg_hba.conf insertafter="^\#\sIPv4\slocal\sconnections" line="hostssl replication   transfert   {{hostsdata[item].ip}}/32  md5" regexp="{{hostsdata[item].ip}}"
+  with_items:
+    - "{{postgresql_replication_clients}}"
+  notify:
+    restart postgresql
+
+- name: Install PG DB replication script
+  copy: src={{ role_path }}/../../roles/postgresql_backup_master/files/home/root/scripts/transfert/replicationPostgresDB.sh dest=/home/root/scripts/transfert/replicationPostgresDB.sh owner=transfert group=transfert mode=u+x
+
+- name: Install PG Backup scripts 
+  copy: src={{ role_path }}/../../roles/postgresql_backup_master/files/home/root/scripts/transfert/backupPostgres.sh dest=/home/root/scripts/transfert/backupPostgres.sh group=transfert owner=transfert mode=0755
+
+- name: Install recipient PG backup crontab 
+  cron:
+    user: transfert
+    name: "PG Backup for standby server"
+    hour: "{{postgresql_backup_hour}}"
+    minute: "{{postgresql_backup_minute}}"
+    job: "test -e /home/postgresql/{{postgresql_version}}/STANDBY -o -e /home/postgresql/{{postgresql_version}}/STANDBY_DESYNC && /home/root/scripts/transfert/replicationPostgresDB.sh --dbname {{postgresql_db_schema_name}} --localfolder /home/transfert/{{postgresql_db_schema_name}}/backups --remotefolder {{postgresql_backup_remote_folder}} --server {{postgresql_backup_server}} --nbkeep {{(postgresql_backup_retention_num is defined)|ternary(postgresql_backup_retention_num, 10)}} {{(pgDumpOptions is defined)|ternary(pgDumpOptions, '')}} >> /var/log/transfert/transfert_cron_backupPostgresHourly.log 2>&1"
+
+- name: Test if there is a motd installed
+  stat: path=/etc/motd
+    
+- name: Generate motd for primary (will fail if figlet is not installed on control host)
+  shell: "echo 'PG Cluster - PRIMARY' | figlet > /tmp/figlet.out -w 300"
+  when: postgres_cluster_primary_server == inventory_hostname
+  delegate_to: localhost
+
+- name: Generate motd for primary (will fail if figlet is not installed on control host)
+  shell: "echo 'PG Cluster - STANDBY' | figlet > /tmp/figlet.out -w 300"
+  when: postgres_cluster_standby_server == inventory_hostname
+  delegate_to: localhost
+
+- name: Change motd
+  copy: content="{{debian_data[debian_distri].motd}}{{lookup('file','/tmp/figlet.out')}}" dest=/etc/motd
+  when: not ansible_check_mode 
+
+    

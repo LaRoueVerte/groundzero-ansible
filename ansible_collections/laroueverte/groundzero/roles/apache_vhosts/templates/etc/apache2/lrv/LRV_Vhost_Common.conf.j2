@@ -1,0 +1,32 @@
+RewriteEngine on
+RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
+RewriteRule .* - [F]
+
+DocumentRoot /var/www/default/
+{% if (apache_java_gzip is defined and not apache_java_gzip)%}
+				RequestHeader unset Accept-Encoding
+{% endif %}
+
+# Remove .var type-map handler
+RemoveHandler .var
+
+# Remove X-Powered-By header
+Header unset X-Powered-By
+
+{% if unset_cookieconsent_cookie is defined and unset_cookieconsent_cookie %} 
+# Unset CookieBot CookieConsent cookie
+RequestHeader edit Cookie "(^CookieConsent=[^;]*; |; CookieConsent=[^;]*)" ""
+{% endif %}
+
+# Deactivate KeepAlive
+KeepAlive Off
+
+{% if apache_isolated_domains is defined %}
+Include /etc/apache2/lrv/LRV_Isolation.conf
+{% endif %}
+
+Alias /parking/ "/var/www/parking/"
+JkUnMount /parking/* loadbalancer1
+
+ErrorDocument 500 /parking/index.html
+ErrorDocument 503 /parking/index.html

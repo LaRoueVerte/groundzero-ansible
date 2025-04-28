@@ -1,0 +1,25 @@
+debian:
+  data:
+    debian11:
+      motd: "Debian 11/bullseye"
+      debian_name: bullseye
+      disable_bind_on_ip_6: true
+      bind_local_conf: debian12plus-local.conf
+      # Debian eol date from https://wiki.debian.org/DebianReleases
+      eol_lts: "2026-07-01"
+      zabbix_version: "4.0"
+      php_version: "7.4"
+      python_externally_managed: false
+      vlogger_source: distri
+      ntp_package: ntp
+    debian12:
+      motd: "Debian 12/bookworm"
+      debian_name: bookworm
+      disable_bind_on_ip_6: true
+      bind_local_conf: debian12plus-local.conf
+      # Debian eol date from https://wiki.debian.org/DebianReleases
+      eol_lts: "2028-06-30"
+      zabbix_version: "6.0"
+      python_externally_managed: true
+      vlogger_source: external
+      ntp_package: ntpsec

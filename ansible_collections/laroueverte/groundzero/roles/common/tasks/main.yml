@@ -1,0 +1,81 @@
+---
+# Parameters
+# nobind               : set to true to disable bind install configuration
+# nossh        				: set to true to disable ssh configuration
+# ssh_additionnal_user  	: set this variable to a user that can login as root
+# ssh_additionnal_user_ips	: if ssh_additionnal_user is defined, contains the list of ips that this user can connect from
+# ssh_disable_password_authentication : if ssh_disable_password_authentication is defined
+#                                  then password authentication will be disabled at ssh configuration level
+# iptables_ssh_open			: if defined, let the SSH port open to earth
+
+# noapticron   				: set to true to disable apticron configuration
+# etc_hosts    				: a list of object containing /etc/hosts entries. Each object contains regexp/hostip/hostname
+#              				Example : etc_hosts: [{hostip: "127.0.0.1", hostname: gzdb, regexp: '\s+gzdb'}],
+# exim4_dkim   				: if defined, adds dkim support for sending emails. Must contains the domain to signup (used for naming files mainly)
+# exim4_dkim_selector   	: if exim4_dkim is defined, define this value for the dkim selector ( for instance a timestamp like 20161119)
+# ip6tables					: to enable ip6tables (currently blocks any ipv6 trafic)
+# http_lrv_restricted		: to open http port to LRV IPs only
+# iptables_http_allowed_ips : to enable additionnal host to port 80 (for example, if  http_lrv_restricted is defined)
+# iptables_https_allowed_ips: to enable additionnal host to port 443 (for example, if  http_lrv_restricted is defined)
+# iptables_ssh_port_knocking: An array defining the port knocking sequence.
+#                       For example, [1234, 5678, 91011] will open the SSH port if the host is able to connect to these ports in this order.
+
+- include: ssh.yml
+  tags: ssh,common
+  when: not nossh is defined
+
+- include: log.yml
+  tags: common,log
+
+- include: apparmor.yml
+  tags: apparmor,common
+
+- include: bind.yml
+  tags: bind,common
+
+- include: time.yml
+  tags: time,common
+
+- include: exim4.yml
+  tags: exim4,common
+
+- include: fail2ban.yml
+  tags: fail2ban,common
+
+- include: iptables.yml
+  tags: system_iptables,common
+
+- include: apticron.yml
+  tags: apticron,common
+  when: not noapticron is defined
+
+- include: tools.yml
+  tags: common_tools,common,system_backup
+
+- include: lrv_scripts.yml
+  tags: lrv_scripts,common
+
+- include: etc_hosts.yml
+  tags: etc_hosts,common
+
+- include: sudo.yml
+  tags: sudo,common
+
+- include: kernel.yml
+  tags: kernel,common
+
+- include: networking.yml
+  when: networking_ips is defined
+  tags: networking,common
+
+- name: Smartd configuration tags(smartd, common) skipped if not common_smartd_enabled
+  import_tasks: smartd.yml
+  tags: smartd,common
+  when: not common_smartd_enabled is defined or common_smartd_enabled
+
+- include: system_backup.yml
+  when: system_backup_configuration is defined
+  tags: system_backup,common
+
+- include: openssl.yml
+  tags: openssl,common

@@ -1,0 +1,12 @@
+---
+- set_fact: jdbc_url="jdbc:postgresql://gzdb:5432/{{tomcat_jndi_datasource_databasename}}?{{(tomcat_jndi_datasource_ssl is defined and tomcat_jndi_datasource_ssl) | ternary('ssl=true&amp;sslmode=require','')}}{{(tomcat_jndi_datasource_autosave_conservative is defined and tomcat_jndi_datasource_autosave_conservative) | ternary('&amp;autosave=conservative','')}}"
+
+- name: Set JNDI resource in tomcat context.xml
+  lineinfile:
+    state: "present"
+    path: "/home/tomcat/servers/{{tomcat_instance}}/current/conf/context.xml"
+    insertbefore: "</Context>"
+    regexp: 'Resource name="jdbc\/{{tomcat_jndi_datasource_name}}db"'
+    line: '<Resource name="jdbc/{{tomcat_jndi_datasource_name}}db" auth="Container" type="javax.sql.DataSource" defaultAutoCommit="true" maxTotal="20" maxIdle="20" maxWaitMillis="500" username="{{postgresql_application_user}}" password="{{postgresql_application_password}}" driverClassName="org.postgresql.Driver" url="{{jdbc_url}}"/>'
+  notify: restart_tomcat{{tomcat_instance}} 
+ 
