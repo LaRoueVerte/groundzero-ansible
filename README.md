@@ -26,7 +26,10 @@ All other roles have been tested on a fresh install
 Add instructions here
 
 ### How to use roles
-All roles are documented in main.yml. More information to come.
+All roles are documented in main.yml. Install from https://laroueverte.github.io/groundzero-ansible/ using ansible-galaxy : 
+```sh
+ansible-galaxy collection install git+https://github.com/laroueverte/groundzero-ansible#/ansible_collections/laroueverte/groundzero,release
+```
 
 ## Variables
 We are using a host inventory to store IP addresses as we do not rely on remote host inventory (thus, playbook will run even if other side is down or unavailable). Each name into "hostdata" must contain an "ip" field. All hosts will be referenced.
@@ -38,4 +41,4 @@ hostsdata:
 ```
 
 ## Example
-A full running example inspired from real life is provided into example directory. Put link to github here.
+A full running example inspired from real life is provided into example directory. See it at https://github.com/LaRoueVerte/groundzero-ansible/tree/release/ansible_collections/example
