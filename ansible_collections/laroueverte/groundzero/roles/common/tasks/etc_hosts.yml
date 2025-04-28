@@ -1,0 +1,17 @@
+---
+
+- name: check if a cloud.cfg file is present
+  stat: path=/etc/cloud/cloud.cfg
+  register: cloud_cfg
+
+- name: If present, change cloud.cfg file to prevent /etc/hosts being deleted at boot
+  lineinfile: "dest=/etc/cloud/cloud.cfg line='manage_etc_hosts: false' regexp='^#?manage_etc_hosts'"
+  when:  cloud_cfg.stat.exists
+
+- name: Update etc hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.hostip }} {{ item.hostname }}"
+  with_items: "{{etc_hosts is defined | ternary(etc_hosts,[])}}"
+  

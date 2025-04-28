@@ -1,0 +1,75 @@
+---
+
+#Yes, copying tags everywhere is mandatory because this file is used with include_tasks that does not propagate tags (and import_tasks cannot be used because it does not allo loops) 
+
+#- debug: var=apache_java_vhost
+#  tags:
+#    - apache_vhosts
+
+- name: check if a letsencrypt certificate is already created if applicable
+  stat: path=/etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+  register: letsencryptcertificate
+  when: apache_java_vhost.letsencrypt is defined
+  tags:
+    - apache_vhosts
+  
+- name: Enables ssl in apache2
+  apache2_module: state=present name=ssl
+  notify: apache_restart
+  tags:
+    - apache_vhosts
+
+- name: Create an apache passwords file if not there (check_mode=false and force=no to force the initial creation of file if not existing)
+  copy: dest=/etc/apache2/lrv/passwords content="" owner=root force=no
+  check_mode: false
+  tags:
+    - apache_vhosts
+
+- name: Add user / password info to passwords file
+  lineinfile: line="{{item.login}}:{{item.password}}" dest=/etc/apache2/lrv/passwords 
+  loop: "{{ apache_java_vhost.apache_java_vhost_auth_users }}"
+  when: apache_java_vhost.apache_java_vhost_auth_users is defined 
+  tags:
+    - apache_vhosts
+
+- name: "vhost install {{apache_java_vhost.serverindex}}_{{apache_java_vhost.servername}}.conf"
+  template: src=etc/apache2/sites-enabled/010_JavaWebApp1.conf.j2 dest=/etc/apache2/sites-enabled/{{apache_java_vhost.serverindex}}_{{apache_java_vhost.servername}}.conf
+  notify: apache_restart
+  tags:
+    - apache_vhosts
+
+- name: Enables mod_alias in apache2
+  apache2_module: state=present name=alias
+  notify: apache_restart
+  tags:
+    - apache_vhosts
+
+- include_tasks: letsencrypt_dns.yml
+  when: apache_java_vhost.letsencrypt is defined and apache_java_vhost.letsencrypt_web is not defined
+  tags:
+    - apache_vhosts
+
+- include_tasks: letsencrypt_web.yml
+  when: apache_java_vhost.letsencrypt is defined and apache_java_vhost.letsencrypt_web is defined and apache_java_vhost.letsencrypt_web
+  tags:
+    - apache_vhosts
+    - system_cron
+
+- name: check if a letsencrypt certificate is already created if applicable
+  stat: path=/etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+  register: letsencryptcertificate
+  when: apache_java_vhost.letsencrypt is defined
+  tags:
+    - apache_vhosts
+
+#- debug: var=letsencryptcertificate
+#  tags:
+#    - apache_vhosts
+
+- name: "vhost install {{apache_java_vhost.serverindex}}_{{apache_java_vhost.servername}}.conf"
+  template: "src=etc/apache2/sites-enabled/010_JavaWebApp1.conf.j2 dest=/etc/apache2/sites-enabled/{{apache_java_vhost.serverindex}}_{{apache_java_vhost.servername}}.conf"
+  notify: apache_restart
+  when: (not letsencryptcertificate.skipped is defined or not letsencryptcertificate.skipped) and letsencryptcertificate.stat.exists
+  tags:
+    - apache_vhosts
+  

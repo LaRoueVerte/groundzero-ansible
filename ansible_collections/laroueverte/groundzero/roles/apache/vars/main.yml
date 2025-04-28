@@ -1,0 +1,6 @@
+apache:
+  data:
+    debian11:
+      vlogger_source: distri
+    debian12:
+      vlogger_source: external

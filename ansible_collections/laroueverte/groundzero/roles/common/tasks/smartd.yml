@@ -1,0 +1,14 @@
+---
+
+- name: install smartmontools apt
+  apt: name=smartmontools state=present
+  
+- name: Set default Smartd disk type
+  set_fact: smartd_disk_type="sat"
+  when: smartd_disk_type is not defined   
+  
+- name: add our /dev/* monitoring line to /etc/smartd.conf 
+  lineinfile: dest=/etc/smartd.conf regexp='^DEVICESCAN' line='DEVICESCAN -a -d {{smartd_disk_type}} -o on -S on -s (S/../.././01|L/../../1/03) -m {{common_monitoring_email}}'
+  notify:
+    - smartd_restart
+  

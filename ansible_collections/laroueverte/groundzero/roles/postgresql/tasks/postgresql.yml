@@ -1,0 +1,137 @@
+---
+
+- name: Install postgresql
+  template: src=pgdg.list.j2 dest=/etc/apt/sources.list.d/pgdg.list
+  when: postgresql_repository == "pgdg"
+  
+- apt: name=ca-certificates state=present
+
+- apt_key: url=https://www.postgresql.org/media/keys/ACCC4CF8.asc state=present
+  when: postgresql_repository == "pgdg"
+
+- apt: update_cache=yes
+
+- name: install postgresql and postgis
+  apt: name=postgresql-{{postgresql_version}}-postgis-{{postgresql_postgis_version}} state=present
+  when: postgresql_postgis_version != "NONE"
+  notify: 
+    restart postgresql
+
+- name: install postgresql only
+  apt: name=postgresql-{{postgresql_version}} state=present
+  when: postgresql_postgis_version == "NONE"
+  notify: 
+    restart postgresql
+
+- apt: name=postgresql-{{postgresql_version}}-postgis-{{postgresql_postgis_version}}-scripts
+  when: postgresql_postgis_version != "NONE"
+  notify: 
+    restart postgresql
+
+- apt: name=postgresql-client-{{postgresql_version}}
+  notify: 
+    restart postgresql
+
+- apt: name=postgresql-contrib-{{postgresql_version}}
+  notify: 
+    restart postgresql
+
+- name: stat /var/lib/postgresql/{{postgresql_version}}/main
+  stat: path=/var/lib/postgresql/{{postgresql_version}}/main
+  register: pgmain
+
+- name: Creates postgresql's home. May fail if cluster is not properly initialized (pgmain.stat.exists=false). To fix it run 'dpkg-reconfigure locales' and purge all postgresql package before retrying 
+  file: state=directory dest=/home/postgresql/ owner=postgres group=postgres
+  when: not pgmain.stat.islnk
+  notify: 
+    restart postgresql
+  
+- name: Creates postgresql directory for storing cluster 
+  file: state=directory dest=/home/postgresql/{{postgresql_version}} owner=postgres group=postgres
+  when: not pgmain.stat.islnk
+  notify: 
+    restart postgresql
+
+- service: name=postgresql state=stopped
+  when: not pgmain.stat.islnk
+  notify: 
+    restart postgresql
+  
+- name: Move /var/lib/postgresql/{{postgresql_version}}/main to /home/postgresql/{{postgresql_version}} if /var/lib/postgresql/{{postgresql_version}}/main is not a link
+  command: mv /var/lib/postgresql/{{postgresql_version}}/main /home/postgresql/{{postgresql_version}}
+  when: not pgmain.stat.islnk
+  notify: 
+    restart postgresql
+  
+- name: Create link /home/postgresql/{{postgresql_version}}/main /var/lib/postgresql/{{postgresql_version}}/main
+  file: src=/home/postgresql/{{postgresql_version}}/main dest=/var/lib/postgresql/{{postgresql_version}}/main state=link
+  when: not pgmain.stat.islnk
+  notify: 
+    restart postgresql
+
+- replace: dest=/etc/postgresql/{{postgresql_version}}/main/pg_hba.conf regexp='^local\s+all\s+postgres\s+peer$' replace='local   all   postgres     trust'
+  notify: 
+    restart postgresql
+
+- name: Copy postgresql log rotation
+  template: src=etc/logrotate.d/postgresql-common-versioned.j2 dest=/etc/logrotate.d/postgresql-common-{{postgresql_version}}
+  tags: postgresql_logrotate
+
+- name: Create /var/log/postgresql/{{postgresql_version}}
+  file: dest=/var/log/postgresql/{{postgresql_version}} group=postgres owner=root state=directory mode="u+rwx,g+rwx,o+rx"
+
+- name: Check if /var/log/postgresql/{{postgresql_version}}/pglog.tgz exists
+  stat: path=/var/log/postgresql/{{postgresql_version}}/pglog.tgz
+  register: pgloggz
+  tags: postgresql_logrotate
+
+- name: Create an empty /var/log/postgresql/{{postgresql_version}}/pglog.tgz
+  file: dest=/var/log/postgresql/{{postgresql_version}}/pglog.tgz group=postgres owner=postgres mode=700 state=touch
+  when: (not pgloggz.skipped is defined or not pgloggz.skipped) and not pgloggz.stat.exists 
+  notify:
+    restart postgresql
+  tags: postgresql_logrotate
+
+- meta: flush_handlers
+
+- apt: name=python3-psycopg2 state=present
+
+- name: Create a secured, database application user    
+  postgresql_user: login_user=postgres
+                   name={{postgresql_application_user}}
+                   password={{postgresql_application_password}}
+                   encrypted=yes
+                   port={{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}
+
+- name: Add transfert user
+  user: name=transfert state=present shell=/bin/bash generate_ssh_key=yes
+
+- name: Get transfert user public key
+  fetch: src=/home/transfert/.ssh/id_rsa.pub dest={{role_path}}/../../data
+  when: groundzero_fetch_transfert_key is defined and groundzero_fetch_transfert_key
+
+- name: Create transfert folders
+  file: path={{item.path}} state=directory group=transfert owner=transfert
+  with_items:
+    - { path: '/home/root/scripts/transfert' }
+    - { path: '/var/log/transfert' }
+
+- name: Install zabbix sender needed for sending maintenance result to zabbix
+  apt: name=zabbix-sender state=present
+  when: "'zabbix_monitored' in ansible_role_names"
+
+- copy: src=home/root/scripts/transfert/{{item}} dest=/home/root/scripts/transfert/{{item}} group=transfert owner=transfert mode=u+x
+  with_items:
+    - checkFromRecipient.sh
+    - postgresNightlyMaintenance.sh
+
+- name: Install PG DB Install script
+  copy: src=home/root/scripts/transfert/installPostgresDb.sh dest=/home/root/scripts/transfert/installPostgresDb.sh owner=transfert group=transfert mode=u+x
+  when: postgresql_replication_on is not defined or not postgresql_replication_on
+
+
+- name: Iptables rules for Postgresql
+  template: src=etc/iptables.d/75_postgresql.conf.j2 dest=/etc/iptables.d/75_postgresql.conf
+  tags: system_iptables
+  notify: 
+    - iptables restart

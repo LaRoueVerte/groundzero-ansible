@@ -1,0 +1,14 @@
+---
+#################################
+# Role installing :
+# - zabbix agent
+
+#################################
+# Parameters : 
+# - zabbix_server_host: hostname of the zabbix server
+
+#################################
+# Example : 
+
+- include: zabbix_monitored.yml
+  tags: zabbix_monitored

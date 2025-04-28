@@ -1,0 +1,29 @@
+---
+
+#################################
+# Role installing :
+
+#################################
+# Parameters : 
+# - common_monitoring_email_prefix : monitoring email prefix that will receive errors (ex : prefix=monitoring for receiving email on monitoring+host@domain)
+# - common_monitoring_email_domain : monitoring email domain that will receive errors (ex : domain=myhost.fr for receiving email on monitoring+host@myhost.fr)
+# - fail2ban_ignore_ips: list of space separated ips to ignore
+#################################
+# Example : 
+
+- apt: name=fail2ban state=present
+
+- name: Install fail2ban jail.local
+  template: src=etc/fail2ban/jail.local.j2 dest=/etc/fail2ban/jail.local
+  notify: fail2ban restart
+
+- name: Install fail2ban sshd-brute.conf
+  copy: src=fail2ban/filter.d/sshd-brute.conf dest=/etc/fail2ban/filter.d/sshd-brute.conf
+  notify: fail2ban restart
+
+- meta: flush_handlers
+
+- name: Check if fail2ban is running (this tasks will fail if fail2ban is not running)
+  shell: "systemctl show fail2ban | grep 'SubState=running'"
+
+  

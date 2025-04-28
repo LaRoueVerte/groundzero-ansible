@@ -1,0 +1,26 @@
+---
+- name: Create /home/root/python35-deb that will contain deb installation files
+  file:
+    path: /home/root/python35-deb
+    state: directory
+
+- name: Copy all necessary .deb files for a manual install (since debian 10 we can not install python35 from official repositories)
+  copy: src=home/root/python35-deb/ dest=/home/root/python35-deb
+
+- name: Installation of python35
+  apt: deb=/home/root/python35-deb/{{item}} state=present
+  loop:
+    - libssl1.1_1.1.1w-0+deb11u1_amd64.deb
+    - libmpdec2_2.4.2-2_amd64.deb
+    - libreadline7_7.0-5_amd64.deb
+    - libpython3.5-minimal_3.5.3-1+deb9u5_amd64.deb
+    - libpython3.5-stdlib_3.5.3-1+deb9u5_amd64.deb
+    - libpython3.5_3.5.3-1+deb9u5_amd64.deb
+    - libpython3.5-dev_3.5.3-1+deb9u5_amd64.deb
+    - python3.5-minimal_3.5.3-1+deb9u5_amd64.deb
+    - python3.5_3.5.3-1+deb9u5_amd64.deb
+    - python3.5-dev_3.5.3-1+deb9u5_amd64.deb
+
+- name: Adding apt pin for python 3.5 
+  copy: src=etc/apt/preferences.d/python35 dest=/etc/apt/preferences.d/python35
+       

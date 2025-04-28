@@ -1,0 +1,8 @@
+"/var/log/root/*.log" {
+        compress
+        weekly
+        size 500k
+        rotate 5
+        missingok
+
+}

@@ -1,0 +1,31 @@
+---
+
+#################################
+# Role installing :
+# - java 7/8
+
+#################################
+# Parameters :
+# - java_version : (all supported by adoptium) 8,11,16,17,18,19,20,21,22,23,24
+# - java_versions : an array of versions to install containing above java_version
+# - java_cacert_additional : if present, this role will add a certificate to cacerts
+#################################
+# Example :
+#    - {role: java,
+#             java_version: 8
+#             java_cacert_additional: {
+#                  name: gzcacert,
+#                  src: '../x.der'
+#             }
+#      }
+
+- name: Install java
+  ansible.builtin.include_tasks:
+    file: java.yml
+    apply:
+      tags:
+        java
+  tags: java
+  with_items: "{{ java_versions is defined | ternary( java_versions, [java_version] ) }}"
+  loop_control:
+    loop_var: install_java_version

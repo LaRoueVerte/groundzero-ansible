@@ -1,0 +1,5 @@
+---
+
+- name: Sets the TLS version if defined
+  lineinfile: path=/etc/ssl/openssl.cnf regexp="^#?MinProtocol" line="MinProtocol = {{openssl_min_protocol}}" insertafter="\[system_default_sect\]"
+  when: openssl_min_protocol is defined

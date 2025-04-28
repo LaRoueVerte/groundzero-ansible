@@ -1,0 +1,10 @@
+---
+
+- command: openssl req -new -x509 -days 3650 -nodes -out /etc/apache2/apache.pem -keyout /etc/apache2/apache.key -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN={{apache_selfsigned_domain}}" \
+  args:
+    creates: /etc/apache2/apache.pem
+  
+- file: state=file dest=/etc/apache2/apache.key mode=600   
+- file: state=file dest=/etc/apache2/apache.pem mode=600   
+
+- copy: src=etc/apache2/lrv/LRV_SelfSigned_Common_HTTPS.conf dest=/etc/apache2/lrv/LRV_SelfSigned_Common_HTTPS.conf

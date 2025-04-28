@@ -1,0 +1,147 @@
+---
+
+- name: Install zabbix server
+  block: 
+   - include: ../../zabbix_monitored/tasks/zabbix_repo.yml
+
+   - name: Install zabbix server package
+     apt: name=zabbix-server-pgsql state=present
+     notify: restart zabbix
+   
+   - name: Install fping needed for icmppingloss
+     apt: name=fping state=present
+     notify: restart zabbix agent
+   
+   - name: Install bind9-dnsutils needed for check_ssl_cert.sh
+     apt: name=bind9-dnsutils state=present
+
+   - name: Install bc needed for 
+     apt: name=bc state=present
+
+   - file: dest=/usr/bin/fping owner=root group=zabbix mode=4710 state=file
+   
+   - name: Enable zabbix server
+     service: name=zabbix-server enabled=true
+     notify: restart zabbix
+     
+   - name: Install zabbix web
+     apt: name=zabbix-frontend-php state=present
+     tags: zabbix_server
+     notify: restart zabbix
+     
+   - name: Disable snmpd that seems to provide trouble
+     service: name=snmpd enabled=false  
+    
+   - name: Activate zabbix
+     lineinfile: dest=/etc/default/zabbix-server regexp='^START' line='START=yes'
+     notify: restart zabbix
+   
+   - name: Change user for zabbix server conf
+     lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp='^DBUser' line='DBUser={{postgresql_application_user}}'
+     notify: restart zabbix
+   
+   - name: Change password for zabbix server conf
+     lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp='^(# )?DBPassword' line='DBPassword={{postgresql_application_password}}'
+     notify: restart zabbix
+    
+   - name: Change db port for zabbix server conf
+     lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp='^(# )?DBPort' line='DBPort=5432'
+     notify: restart zabbix
+   
+   - name: Change Timeout zabbix server conf
+     lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp='^(# )?Timeout' line='Timeout=30'
+     notify: restart zabbix
+   
+   - name: Create zabbix scripts directory
+     file: dest=/home/root/scripts/zabbix state=directory
+   
+   - name: Create zabbix scripts externalchecks directory
+     file: dest=/home/root/scripts/zabbix/externalchecks state=directory
+   
+   - name: Copy zabbix server "external checks" scripts
+     copy: src=home/root/scripts/zabbix/externalchecks/{{item.file}} dest=/home/root/scripts/zabbix/externalchecks/ mode=755
+     with_items:
+       - { file: 'checkCertificate.sh' }
+       - { file: 'check_ssl_cert.sh' }
+   
+   - name: Install curl, because check_ssl_cert needs it
+     apt: name=curl state=present
+   
+   - name: Change scripts external checks directory
+     lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp='^(# )?ExternalScripts=' line='ExternalScripts=/home/root/scripts/zabbix/externalchecks/'
+     notify: restart zabbix
+   
+   - name: create zabbix database, prepare needed package for postgresql_db module
+     apt: name=python3-psycopg2 state=present
+     
+   - name: create zabbix database
+     postgresql_db: login_user=postgres name=zabbix encoding=UTF8 owner={{postgresql_application_user}} login_password={{postgresql_application_password}} 
+     notify: restart zabbix
+     
+   - name: detect if zabbix schema is created  
+     shell: psql -U postgres zabbix -c "select count(*) from hosts"
+     register: zabbix_db
+     ignore_errors: true
+    
+   - name: create zabbix schema if needed (will be skipped in check_mode)
+     shell: zcat /usr/share/zabbix-server-pgsql/schema.sql.gz | psql -U {{postgresql_application_user}} -h localhost zabbix
+     environment:
+       PGPASSWORD: "{{postgresql_application_password}}"
+     when: not ansible_check_mode and  zabbix_db.rc != 0
+     notify: restart zabbix
+       
+   - name: create zabbix images if needed (will be skipped in check_mode)
+     shell: zcat /usr/share/zabbix-server-pgsql/images.sql.gz | psql -U {{postgresql_application_user}} -h localhost zabbix 
+     environment:
+       PGPASSWORD: "{{postgresql_application_password}}"
+     when: not ansible_check_mode and  zabbix_db.rc != 0
+     notify: restart zabbix
+   
+   - name: create zabbix data if needed (will be skipped in check_mode)
+     shell: zcat /usr/share/zabbix-server-pgsql/data.sql.gz | psql -U {{postgresql_application_user}} -h localhost zabbix 
+     environment:
+       PGPASSWORD: "{{postgresql_application_password}}"
+     when: not ansible_check_mode and  zabbix_db.rc != 0
+     notify: restart zabbix
+   
+   - name: copy zabbix vhost
+     copy: src=etc/apache2/sites-available/zabbix.conf dest=/etc/apache2/sites-available/zabbix.conf
+     tags: zabbix_conf
+     notify: apache_restart
+   
+   - name: enable zabbix in apache
+     file: dest=/etc/apache2/sites-enabled/zabbix.conf src=/etc/apache2/sites-available/zabbix.conf state=link
+     notify: apache_restart
+   
+   - name: change php settings for zabbix
+     lineinfile: dest=/etc/php/{{php_version}}/apache2/php.ini regexp="^post_max_size\s+=\s+" line="post_max_size = 16M"
+     notify: apache_restart
+   
+   - name: change php settings for zabbix
+     lineinfile: dest=/etc/php/{{php_version}}/apache2/php.ini regexp="^max_execution_time\s+=\s+" line="max_execution_time = 300"
+     notify: apache_restart
+     
+   - name: change php settings for zabbix
+     lineinfile: dest=/etc/php/{{php_version}}/apache2/php.ini regexp="^max_input_time\s+=\s+" line="max_input_time = 300"
+     notify: apache_restart
+   
+   - name: change php settings for zabbix
+     lineinfile: dest=/etc/php/{{php_version}}/apache2/php.ini regexp="^date.timezone\s+=\s+" line="date.timezone = Europe/Paris"
+     notify: apache_restart  
+   
+   - name: change gui settings
+     template: src=etc/zabbix/zabbix.conf.php.j2 dest=/etc/zabbix/zabbix.conf.php
+     notify: apache_restart
+     
+   - name: Create minimal zabbix_agentd.conf file to make zabbix_sender working
+     copy: src=etc/zabbix/zabbix_agentd.conf dest=/etc/zabbix/zabbix_agentd.conf mode=755  
+  tags: zabbix_server
+
+- name: Iptables rules for Zabbix server
+  template: src=etc/iptables.d/59_iptables_zabbix_server.conf.j2 dest=/etc/iptables.d/59_iptables_zabbix_server.conf
+  tags: system_iptables
+  notify: 
+    - iptables restart
+
+- meta: flush_handlers    
+  

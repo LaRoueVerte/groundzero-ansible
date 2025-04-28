@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+import ovh
+import os
+import time
+import dns.resolver
+
+client = ovh.Client(
+    endpoint='ovh-eu',
+    application_key='{{letsencrypt_dns_ovhapi_application_key}}',
+    application_secret='{{letsencrypt_dns_ovhapi_application_secret}}',
+    consumer_key='{{letsencrypt_dns_ovhapi_consumer_key}}',
+)
+
+#Example of domain : _acme-challenge.monitoring.mycompany.net
+domain="_acme-challenge.%s"%os.getenv('CERTBOT_DOMAIN')
+
+txtValue= os.getenv('CERTBOT_VALIDATION')
+
+print("Registering %s" % domain)
+print("With challenge %s" % txtValue)
+
+records=client.get('/domain/zone/{{ letsencrypt_dns_validation_domain }}/record/', subDomain=domain)
+if len(records)==1:
+    recordId = records[0]
+    print("Record found %s" % recordId)
+    client.put('/domain/zone/{{ letsencrypt_dns_validation_domain }}/record/%s' % recordId, subDomain=domain, target=txtValue)
+    print("Record updated")
+else:
+    print("No record found")
+    client.post('/domain/zone/{{ letsencrypt_dns_validation_domain }}/record', fieldType='TXT', subDomain=domain, target=txtValue)
+    print("Record added")
+
+timeoutTime = time.time() + 100
+check = False
+resolver = dns.resolver.Resolver()
+resolver.nameservers = ['213.251.188.153']
+
+while time.time() < timeoutTime and not check :
+    try :
+        print("Refreshing zone")
+        client.post('/domain/zone/{{ letsencrypt_dns_validation_domain }}/refresh')
+        answers = resolver.query("%s.{{ letsencrypt_dns_validation_domain }}" % domain,'TXT')
+        for rdata in answers :
+            for txt_string in rdata.strings :
+                txt_string_decoded = txt_string.decode('UTF-8')
+                print("got server answer s=%s" % txt_string_decoded)
+                if txt_string_decoded == txtValue :
+                    check = True
+    except BaseException as error:
+        print("Resolver failed because of %s" % error)
+    if not check :
+        time.sleep(10)
+
+if check : 
+	print("DNS Record updated")
+else :
+	print("DNS Record update ERROR")

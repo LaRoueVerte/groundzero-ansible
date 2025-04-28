@@ -1,0 +1,7 @@
+---
+
+- name: apache_restart
+  shell: apachectl configtest && systemctl --system daemon-reload && systemctl enable apache2 && systemctl start apache2 && systemctl reload apache2
+  
+- name: restart zabbix agent
+  shell: systemctl --system daemon-reload && systemctl enable zabbix-agent && systemctl restart zabbix-agent

@@ -1,0 +1,5 @@
+#Autoriser port 10051 pour les connexions en provenance des agents clients Zabbix
+{% for zabbix_agent in zabbix_agents %}
+# agent sur {{zabbix_agent}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 10051 --source {{hostsdata[zabbix_agent]['ip']}} -j ACCEPT
+{% endfor %}

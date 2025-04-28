@@ -1,0 +1,1 @@
+testhost1 host_role=common_debian  debian_eol_lts='2020-04-30' {{common_monitoring_email}}=aa@a.com

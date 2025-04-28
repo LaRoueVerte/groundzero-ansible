@@ -1,0 +1,11 @@
+---
+- name: install htop
+  apt: name=htop state=present
+  
+- name: install locate
+  apt: name=locate state=present
+  notify:
+    - launch updatedb
+
+- meta: flush_handlers    
+    

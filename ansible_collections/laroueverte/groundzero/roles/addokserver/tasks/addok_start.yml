@@ -1,0 +1,9 @@
+---
+- name: Start Addok service
+  service: name=addok enabled=yes state=started
+  
+- name: Start Redis
+  service: name=redis-server enabled=yes state=started
+
+- name: Start Apache
+  service: name=apache2 enabled=yes state=started

@@ -1,0 +1,151 @@
+---
+# Original version of using a tarball to install tomcat.
+
+- name: stat /home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}}/{{apache_tomcat_version}}/LICENSE
+  stat: path=/home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}}/{{apache_tomcat_version}}/LICENSE
+  register: tomcat_dir
+
+- file: state=directory dest=/home/tomcat/servers/{{tomcat_instance}} owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: state=directory dest=/home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}} owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- unarchive: owner=tomcat group=tomcat copy=yes src={{apache_tomcat_version}}.tar.gz dest=/home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}} creates=/home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}}/{{apache_tomcat_version}}/LICENSE
+  when: not tomcat_dir.stat.exists
+  notify: restart_tomcat{{tomcat_instance}} 
+    
+- file: state=absent dest=/home/tomcat/servers/{{tomcat_instance}}/current/logs    
+  notify: restart_tomcat{{tomcat_instance}} 
+  
+- file: state=directory dest=/home/tomcat/servers/{{tomcat_instance}}/ owner=tomcat group=tomcat recurse=true
+  when: not tomcat_dir.stat.exists
+  notify: restart_tomcat{{tomcat_instance}} 
+  
+- file: state=link dest=/home/tomcat/servers/{{tomcat_instance}}/current src=/home/tomcat/servers/{{tomcat_instance}}/tomcat{{tomcat_version}}/{{apache_tomcat_version}}
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: state=link src=/home/tomcat/servers/postgresql-42.5.1.jar dest=/home/tomcat/servers/{{tomcat_instance}}/current/lib/postgresql.jar owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}}
+  when: copy_tomcat_external_jar_dependencies is defined and copy_tomcat_external_jar_dependencies 
+
+- file: state=link src=/home/tomcat/servers/postgis-jdbc-2.2.1.jar dest=/home/tomcat/servers/{{tomcat_instance}}/current/lib/postgis-jdbc.jar owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}}
+  when: copy_tomcat_external_jar_dependencies is defined and copy_tomcat_external_jar_dependencies 
+
+- file: state=directory dest=/var/log/tomcat/ owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: state=directory dest=/var/log/tomcat/{{tomcat_instance}} owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- template: src=setenv.sh.j2 dest=/home/tomcat/servers/{{tomcat_instance}}/current/bin/setenv.sh owner=tomcat group=tomcat
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Change tomcat logs directory
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/logging.properties regexp='\$\{catalina.base\}/logs' replace='/var/log/tomcat/{{tomcat_instance}}'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Change tomcat logs directory
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/logging.properties regexp='\$\{catalina.base\}/logs' replace='/var/log/tomcat/{{tomcat_instance}}'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Change tomcat logs directory
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/catalina.policy regexp='\$\{catalina.base\}\$\{file.separator\}logs' replace='/var/log/tomcat/{{tomcat_instance}}'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Set tomcat logrotate
+  template: src=logrotate-tomcat.j2 dest=/etc/logrotate.d/tomcat{{tomcat_instance}}
+
+- name: Enable logrotate of catalina
+  file: dest={{item}} state=touch owner=tomcat group=tomcat
+  with_items:
+    - /var/log/tomcat/{{tomcat_instance}}/ROTATEME.catalina
+    - /var/log/tomcat/{{tomcat_instance}}/ROTATEME.host-manager
+    - /var/log/tomcat/{{tomcat_instance}}/ROTATEME.localhost
+    - /var/log/tomcat/{{tomcat_instance}}/ROTATEME.localhost_access
+    - /var/log/tomcat/{{tomcat_instance}}/ROTATEME.manager
+  
+- replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='<Valve className="org.apache.catalina.valves.AccessLogValve" directory="(.+)"' replace='<Valve className="org.apache.catalina.valves.AccessLogValve" directory="/var/log/tomcat/{{tomcat_instance}}/"'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Uncomment AJP connector
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='^\s+<Connector protocol="AJP/1.3"' replace='--><Connector port="{{tomcat_instance}}8009" protocol="AJP/1.3" redirectPort="8443" /><!--'
+  tags: livi_front_tomcat_serverxml
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Disable AJP secretRequired
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='<Connector port="{{tomcat_instance}}8009" protocol="AJP/1.3" redirectPort="8443" />' replace='<Connector port="{{tomcat_instance}}8009" protocol="AJP/1.3" redirectPort="8443" secretRequired="false" />'
+  notify: restart_tomcat{{tomcat_instance}} 
+ 
+- name: Disable 8080
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='^\s+<Connector port="8080" protocol="HTTP/1.1"([^/]+)/>' replace='<!--<Connector port="{{tomcat_instance}}8080" protocol="HTTP/1.1"\1/>-->'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='<Server port="8005" shutdown="SHUTDOWN">' replace='<Server port="{{tomcat_instance}}8005" shutdown="SHUTDOWN">'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: set jvmRoute
+  replace: dest=/home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml regexp='<Engine name="Catalina" defaultHost="localhost">' replace='<Engine name="Catalina" defaultHost="localhost" jvmRoute="tomcat{{tomcat_instance}}">'
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/docs state=absent
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/examples state=absent
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/host-manager state=absent
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- file: dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/manager state=absent
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- stat: path=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/tomcat.css
+  register: tomcat_defaultroot
+
+- file: dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT state=absent
+  when: tomcat_defaultroot.stat.exists
+  notify: restart_tomcat{{tomcat_instance}} 
+    
+- file: owner=tomcat group=tomcat dest=/home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT state=directory
+  notify: restart_tomcat{{tomcat_instance}} 
+  
+- file: owner=tomcat group=tomcat dest=/home/tomcat/servers/{{tomcat_instance}}/current/lib state=directory
+  
+- name: Copy tomcat catalina to enable Jmx Fixed Port Remoting
+  copy: src=tomcat-8.0-catalina-jmx-remote.jar dest=/home/tomcat/servers/{{tomcat_instance}}/current/lib/catalina-jmx-remote.jar owner=tomcat group=tomcat  
+  notify: restart_tomcat{{tomcat_instance}} 
+
+- name: Enable JMX Listener into tomcat
+  lineinfile:
+    line: <Listener className="org.apache.catalina.mbeans.JmxRemoteLifecycleListener" rmiRegistryPortPlatform="{{tomcat_instance}}2345" rmiServerPortPlatform="{{tomcat_instance}}2346" />
+    dest: /home/tomcat/servers/{{tomcat_instance}}/current/conf/server.xml
+    state: present
+    insertafter: org.apache.catalina.core.ThreadLocalLeakPreventionListener
+  notify: restart_tomcat{{tomcat_instance}} 
+      
+- include: tomcat_who.yml
+  tags: tomcat_who
+
+- name: install tomcat {{tomcat_instance}} in systemd
+  template: src=tomcat-tarball.service.j2 dest=/etc/systemd/system/tomcat{{tomcat_instance}}.service mode=744
+  notify:
+  - systemd reload
+  - restart_tomcat{{tomcat_instance}} 
+
+- name: Set jndi datasource
+  include_tasks:
+    file: tomcat_jndi_datasource.yml
+    apply:
+      tags: tomcat_context
+  when: tomcat_jndi_datasource is defined and tomcat_jndi_datasource 
+  tags: tomcat_context
+
+- meta: flush_handlers
+
+- name: Ensure tomcat is running and enabled
+  service: name=tomcat{{tomcat_instance}} state=started enabled=true
+  when: restart_tomcat is not defined or restart_tomcat == true
+  
+

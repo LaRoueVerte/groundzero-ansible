@@ -1,0 +1,46 @@
+---
+
+- name: Copy openvpn debian repository file
+  template: src=etc/apt/sources.list.d/openvpn.list.j2 dest=/etc/apt/sources.list.d/openvpn.list
+  register: openvpn_repo
+
+- name: Add openvpn's key
+  shell: wget -qO - https://as-repository.openvpn.net/as-repo-public.gpg | apt-key add -
+  when: openvpn_repo.changed
+  
+- name: Update apt to get openvpn_repo
+  apt: update_cache=yes
+  when: openvpn_repo.changed
+  
+- name: Install openvpn AS
+  apt: name=openvpn-as state=present
+
+- name: ensure /var/log/root is created
+  file: name=/var/log/root state=directory
+
+- name: Iptables rules for openpvn
+  template: src=etc/iptables.d/77_openvpn.conf.j2 dest=/etc/iptables.d/77_openvpn.conf
+  tags: system_iptables,mariadb
+  notify: 
+    - iptables restart
+
+- name: create openvpn account with good password
+  user: name=openvpn state=present shell=/sbin/nologin password={{ openvpn_password | password_hash('sha512', 65534 | random(seed=inventory_hostname) | string) }}
+    
+- name: Configure database access
+  lineinfile: path=/usr/local/openvpn_as/etc/as.conf regexp="{{item.name}}=.*" line="{{item.name}}=mysql://openvpn:{{mariadb_openvpn_password}}@{{hostsdata[openvpn_db_host].ip}}:3306/{{item.db}}"
+  notify: openvpn_restart
+  with_items:
+     - {name: 'certs_db', db: as_certs}
+     - {name: 'user_prop_db', db: as_userprop}
+     - {name: 'config_db', db: as_config}
+     - {name: 'cluster_db', db: as_cluster}
+     - {name: 'notification_db', db: as_notification}
+
+- name: Create openvpnas service override folder
+  file: state=directory name=/etc/systemd/system/openvpnas.service.d/ mode=755
+
+- name: Add service override to handle mariadb dependency
+  copy: src=etc/systemd/system/openvpnas.service.d/override.conf dest=/etc/systemd/system/openvpnas.service.d/override.conf mode=644     
+  notify:
+    - systemd reload

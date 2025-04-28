@@ -1,0 +1,15 @@
+Include /etc/apache2/lrv/Vhost_ServerStatus.conf
+
+<VirtualHost *:80>
+	DocumentRoot /var/www/default/
+	<Directory "/var/www/default/">
+		{% if apache_reverse_proxy is defined %}
+			Allow from {{apache_reverse_proxy}}
+		{% endif %}
+		{% if not apache_reverse_proxy is defined %}
+			Allow from all
+		{% endif %}
+		Deny from all
+	</Directory>
+</VirtualHost>
+

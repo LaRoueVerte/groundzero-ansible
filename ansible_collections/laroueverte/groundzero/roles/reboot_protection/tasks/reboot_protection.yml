@@ -1,0 +1,7 @@
+---
+
+- name: Copy reboot protection script
+  template: src=home/root/scripts/reboot_protection.sh.j2 dest=/home/root/scripts/reboot_protection.sh mode=700
+
+- name: Add profile script to alias reboot
+  copy: src=etc/profile.d/reboot_protection_env.sh dest=/etc/profile.d/reboot_protection_env.sh mode=755

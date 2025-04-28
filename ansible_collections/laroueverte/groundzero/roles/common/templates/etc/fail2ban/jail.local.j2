@@ -1,0 +1,26 @@
+### LRV SPECIFIC ###
+[DEFAULT]
+backend  = polling
+ignoreip = 127.0.0.1 {{ all_whitelisted_ips | join(' ') }} {{(fail2ban_ignore_ips is defined)|ternary(fail2ban_ignore_ips,'')}}
+action   = iptables[name=SSH, port=ssh, protocol=tcp]
+           mail[name=SSH, dest={{common_monitoring_email}}]
+logpath  = /var/log/auth.log
+
+[ssh-brute-ipt]
+enabled  = true
+filter   = sshd-brute
+maxretry = 5
+findtime = 60
+bantime  = 3600
+
+[ssh-iptables-lrv]
+enabled  = true
+filter   = sshd
+maxretry = 5
+
+[ssh-iptables-lrv-aggressive]
+enabled  = true
+filter   = sshd
+maxretry = 3
+findtime = 10
+bantime  = 86400

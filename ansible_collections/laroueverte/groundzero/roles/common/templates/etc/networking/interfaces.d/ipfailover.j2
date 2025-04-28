@@ -1,0 +1,9 @@
+{% for networking_ip in networking_ips %}
+auto {{networking_ipv4_alias is defined | ternary(networking_ipv4_alias,ansible_default_ipv4.alias)}}:{{loop.index}}
+iface {{networking_ipv4_alias is defined | ternary(networking_ipv4_alias,ansible_default_ipv4.alias)}}:{{loop.index}} inet static
+        address {{networking_ip}}
+        netmask 255.255.255.255
+        broadcast {{networking_ip}}
+
+{% endfor %}
+

@@ -1,0 +1,54 @@
+---
+#### Explication du fonctionnement de mod_evasive
+# Il y a deux types de conf : "page" et "site". "page" se base sur l'ip et l'url, "site" uniquement sur l'ip
+# Pour chacun il y a deux valeurs à configurer : count (un nombre d'accès) et interval (un interval de temps entre deux accès).
+#
+# Prenons un exemple :
+#
+# DOSPageCount 30
+# DOSPageInterval 2
+#
+# Cela veut dire que sur un rythme d'accès à une même page inférieur à 2 secondes, au bout de 30 accès (au 31ème) on est banni :
+# - si on fait 30 accès toutes les secondes (en 30 secondes donc), si on fait un 31ème accès dans les 2 secondes alors on sera banni.
+# - si on fait 29 accès toutes les secondes (en 29 secondes donc), puis un 30ème 3 secondes plus tard, les compteurs sont remis à 0.
+#
+###
+
+- name: Ensure libapache2-mod-evasive is installed
+  apt: state=present name=libapache2-mod-evasive
+  notify: apache_restart
+
+- name : Change mod-evasive conf
+  lineinfile: regexp="^\s*#?{{item.variable}}" line="    {{item.variable}} {{item.value}}" dest=/etc/apache2/mods-available/evasive.conf
+  with_items:
+    - { variable: 'DOSLogDir', value: '/var/log/evasive' }
+    - { variable: 'DOSPageCount', value: 30 }
+    - { variable: 'DOSPageInterval', value: 2 }
+    - { variable: 'DOSSiteCount', value: "{{apache_modevasive_dossitecount is defined| ternary(apache_modevasive_dossitecount,'80')}}" }
+    - { variable: 'DOSSiteInterval', value: 5 }
+    - { variable: 'DOSBlockingPeriod', value: 10 }
+    - { variable: 'DOSSystemCommand', value: '"/home/root/scripts/reportModEvasive.sh %s"' }
+  notify: apache_restart
+
+- name: Clear evasive's whitelist - this will be marked as changed all the time because we clear all DOSWhitelist entries
+  lineinfile: state="absent" regexp="^\s+DOSWhiteList.*$" dest=/etc/apache2/mods-available/evasive.conf
+
+- name: Adds our IPs into evasive's whitelist
+  lineinfile: state="present" regexp="^\s+DOSWhiteList {{item}}$" line="    DOSWhiteList {{item}}" dest=/etc/apache2/mods-available/evasive.conf insertbefore="\/IfModule"
+  with_items: "{{all_whitelisted_ips}}"
+  when: all_whitelisted_ips is defined
+  
+- name: Adds additionnal whitelisted IPs into evasive's whitelist
+  lineinfile: state="present" regexp="^\s+DOSWhiteList {{item}}$" line="    DOSWhiteList {{item}}" dest=/etc/apache2/mods-available/evasive.conf insertbefore="\/IfModule"
+  with_items: "{{apache_modevasive_additionnal_whitelisted_ips}}"
+  when: apache_modevasive_additionnal_whitelisted_ips is defined
+
+- name: Copy our script /home/root/scripts/reportModEvasive.sh
+  template: src=home/root/scripts/reportModEvasive.sh.j2 dest=/home/root/scripts/reportModEvasive.sh mode=755
+
+- name : Create directory for storing evasive data
+  file: state=directory dest=/var/log/evasive/ owner=www-data group=www-data
+
+- name: Enable mod_evasive in apache2 (if following fails, you need to wait for ansible-2.3 or replace this file https://raw.githubusercontent.com/robinro/ansible/f67075e352195f00a67feb0456053ea4acad4afb/lib/ansible/modules/web_infrastructure/apache2_module.py)
+  apache2_module: state={{apache_modevasive | ternary('present', 'absent')}} name=evasive
+  notify: apache_restart

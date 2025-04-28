@@ -1,0 +1,20 @@
+---
+
+- name: check if a /etc/network/interfaces file exists
+  stat: path=/etc/network/interfaces
+  register: etcnetworkinterfaces
+
+- name: Generates ipfailover interfaces file (only if /etc/network/interfaces file exists) 
+  template: src=etc/networking/interfaces.d/ipfailover.j2 dest=/etc/network/interfaces.d/ipfailover
+  when: etcnetworkinterfaces.stat.exists
+  notify: networking_restart
+  
+- name: Creates /etc/systemd/network/50-default.network.d/ directory
+  file: dest=/etc/systemd/network/50-default.network.d/ state=directory
+  when: not etcnetworkinterfaces.stat.exists
+  notify: systemdnetwork_restart  
+  
+- name: Generates ipfailover interfaces file for systemd-network (only if /etc/network/interfaces does not exists) 
+  template: src=etc/systemd/network/50-default.network.d/ipfailover.conf.j2 dest=/etc/systemd/network/50-default.network.d/ipfailover.conf
+  when: not etcnetworkinterfaces.stat.exists
+  notify: systemdnetwork_restart  

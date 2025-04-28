@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# -ne 0 ];then
+        echo "Usage : $0"
+        exit 1;
+fi
+WARNING_PERIOD_DAYS=$1
+TODAY=$(date +'%s')
+DEBIAN_EOL_LTS=$(date --date "{{debian.data[debian_distri].eol_lts}}" +'%s')
+DAYS_DIFF=$(( ($DEBIAN_EOL_LTS - $TODAY) / (24*3600) ))
+echo $DAYS_DIFF;

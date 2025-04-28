@@ -1,0 +1,134 @@
+---
+
+#################################
+# Role creating N tomcat instances 
+
+#################################
+# Depends from roles :  
+# - 
+# No direct dependency from other roles but java must be installed first
+ 
+#################################
+# Parameters : 
+# - tomcat_version : version of the tomcat to install. Supports : 
+#      - 8 : will install the bundled tomcat coming from debian or the one from a tarball
+#      - 10 : will install the bundled tomcat from a tarball
+# - tomcat_tarball: if defined and true, will install a tomcat coming from a tarball (must be specified in apache_tomcat_version)
+# - apache_tomcat_version : the name of the tarball tomcat to install 
+# - tomcat_instances : number of tomcat instances to install
+# - tomcat_who_homepath : if defined tells the path to set for who.jsp, if not defined it is /
+# - host_role : the name of the host to send monitoring emails
+# - tomcat_jndi_datasource: if present and set to true, indicates that the datasource is to be declared using JNDI in the server's context.xml
+# - tomcat_jndi_datasource_ssl: if present and set to true, sets the datasource to ssl connectivity
+# - tomcat_jndi_datasource_name: name of the jndi to use (will append "db" )
+# - tomcat_jndi_datasource_databasename: name of the database schema to connect to (example: "livi")
+# - tomcat_jndi_datasource_autosave_conservative: If defined and true, autosave will be set to conservative to avoid error "cached plan must not change result type" (see https://jdbc.postgresql.org/documentation/use/)
+# - tomcat_log4j_override: if present, defines a log4J configuration that will be used to override default configuration from webapps 
+#################################
+# Example : 
+#
+#    - {role: tomcat,
+#           tomcat_version: 9,
+#           tomcat_instances: 2
+#      }
+
+- name: Set tomcat_yaml_file in case tarball is used
+  set_fact:
+    tomcat_yaml_file: "{{ 'tomcat-tarball.yml' if tomcat_tarball is defined and tomcat_tarball == true else 'tomcat8.yml' }}"
+  tags:
+    - tomcat
+    - tomcat0
+    - tomcat1
+    - tomcat2
+    - tomcat3
+
+- name: Set apache_tomcat_version in case tarball is used
+  set_fact:
+    apache_tomcat_version: "apache-tomcat-9.0.102"
+  when: apache_tomcat_version is not defined
+  tags:
+    - tomcat
+    - tomcat0
+    - tomcat1
+    - tomcat2
+    - tomcat3
+    
+    
+- name: Display Variable
+  debug: msg="Using {{ tomcat_yaml_file }}"
+  ignore_errors: yes
+  tags:
+    - tomcat
+    - tomcat0
+    - tomcat1
+    - tomcat2
+    - tomcat3
+
+- name: Install common files for tomcats
+  include: tomcat_common.yml
+  tags:
+    - tomcat
+    - tomcat_common
+
+- name: Copy external_jar_dependencies libraries
+  include: tomcat_external_jar_dependencies.yml
+  when: copy_tomcat_external_jar_dependencies is defined and copy_tomcat_external_jar_dependencies 
+  tags:
+    - tomcat
+    - tomcat_external_jar_dependencies
+
+- name: Install tomcat0
+  vars:
+    tomcat_instance: "0"
+  include_tasks: 
+    file: "{{ tomcat_yaml_file }}"
+    apply:
+      tags:
+        - tomcat
+        - tomcat0
+  tags:
+    - tomcat
+    - tomcat0
+    
+- name: Install tomcat1
+  vars:
+    tomcat_instance: "1"
+  include_tasks: 
+    file: "{{ tomcat_yaml_file }}"
+    apply:
+      tags:
+        - tomcat
+        - tomcat1
+  tags:
+    - tomcat
+    - tomcat1
+  when: tomcat_instances > 1
+  
+- name: Install tomcat2	
+  vars:
+    tomcat_instance: "2"
+  include_tasks: 
+    file: "{{ tomcat_yaml_file }}"
+    apply:
+      tags:
+        - tomcat
+        - tomcat2
+  tags:
+    - tomcat
+    - tomcat2
+  when: tomcat_instances > 2
+  
+- name: Install tomcat3
+  vars:
+    tomcat_instance: "3"
+  include_tasks: 
+    file: "{{ tomcat_yaml_file }}"
+    apply:
+      tags:
+        - tomcat
+        - tomcat3
+  tags:
+    - tomcat
+    - tomcat3
+  when: tomcat_instances > 3
+  

@@ -1,0 +1,26 @@
+---
+
+- name: Install apticron
+  apt: name=apticron state=present
+
+- name: Install apt-listchanges
+  apt: name=apt-listchanges state=present
+  
+- name: apticron Configuration
+  lineinfile: dest=/etc/apticron/apticron.conf regexp='^EMAIL=' line="EMAIL={{common_monitoring_email}}" create="yes"
+
+- name: apticron Configuration
+  lineinfile: dest=/etc/apticron/apticron.conf regexp='^(#\s+)?SYSTEM=' line="SYSTEM={{inventory_hostname}}/{{host_role}}"
+
+- name: apt-listchanges Configuration
+  lineinfile: 
+    dest: /etc/apt/listchanges.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^frontend=', line: "frontend=text" }
+    - { regexp: '^email_address=', line: "email_address={{common_monitoring_email}}" }
+    - { regexp: '^confirm=', line: "confirm=0" }
+  
+
+  

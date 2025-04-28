@@ -1,0 +1,166 @@
+<VirtualHost *:80>
+	ServerName {{apache_java_vhost.servername}}
+	
+{% if apache_java_vhost.serveralias is defined %}
+{% for serveraliasdomain in apache_java_vhost.serveralias %} 
+	ServerAlias {{serveraliasdomain}}
+{% endfor %}
+{% endif %}
+
+{% if (apache_java_vhost.letsencrypt is defined or apache_java_vhost.externalcertificate is defined or apache_java_vhost.selfsigned is defined) == false %}
+	{% if apache_java_vhost.apache_java_vhost_auth_users is defined %}
+		<Location / >
+			AuthType Basic
+			AuthName "{{apache_java_vhost.servername}} basic auth"
+			AuthBasicProvider file
+			AuthUserFile /etc/apache2/lrv/passwords
+			Require user{% for apache_java_vhost_auth_user in apache_java_vhost.apache_java_vhost_auth_users %} {{apache_java_vhost_auth_user.login}}{% endfor %}
+			
+			RequestHeader unset Authorization
+		</Location>
+	{% endif %}
+{% endif %}
+
+{% if (apache_java_vhost.letsencrypt is defined
+		or apache_java_vhost.externalcertificate is defined
+		or apache_java_vhost.selfsigned is defined )
+		and ((not apache_java_vhost.redirect_http_to_https is defined) or apache_java_vhost.redirect_http_to_https )
+		%}
+
+	{% if apache_java_vhost.httpToHttpsRewriteRules is defined%}
+		Include {{apache_java_vhost.httpToHttpsRewriteRules}}
+	{% else %}
+		{% if apache_java_httpToHttpsRewriteRules is defined%}
+			Include {{apache_java_httpToHttpsRewriteRules}}
+		{% else %}
+			{% if apache_java_vhost.letsencrypt_web is defined %}
+				Alias /.well-known/acme-challenge/ "/var/www/letsencrypt/.well-known/acme-challenge/"
+				{% if (apache_java_vhost.jk is not defined) or (apache_java_vhost.jk) %}
+	    			JkUnMount /.well-known/acme-challenge/* loadbalancer1
+	    		{% endif %}
+			{% endif %}
+		    RewriteEngine on
+		    RewriteCond %{HTTPS} =off
+			{% if apache_java_vhost.letsencrypt_web is defined %}		
+				RewriteCond %{REQUEST_URI} !^/.well-known/acme-challenge/
+			{% endif %}
+			RewriteRule ^(.+) https://%{HTTP_HOST}$1 [L,R=301]
+		{% endif %}
+	{% endif %}
+
+	{% if apache_java_vhost.letsencrypt_chainto is defined%}
+		#Chains letsencrypt certificate challenges (if not existing here) to {{apache_java_vhost.letsencrypt_chainto}} that serves same domains as this server 
+		RewriteCond %{REQUEST_URI} ^/.well-known/ [NC]
+	    RewriteCond /var/www/letsencrypt%{REQUEST_URI} !-f
+	    RewriteRule ^(.+) http://{{apache_java_vhost.letsencrypt_chainto}}$1 [L,R=302]
+	{% endif %}
+{% if apache_java_vhost.include is defined %}
+
+	    Include {{apache_java_vhost.include}}
+{% endif %}
+
+{% else %} {#if apache_java_vhost.letsencrypt is defined or apache_java_vhost.externalcertificate is defined or apache_java_vhost.selfsigned is defined#}
+			{% if apache_java_vhost.letsencrypt_web is defined %}
+				Alias /.well-known/acme-challenge/ "/var/www/letsencrypt/.well-known/acme-challenge/"
+				{% if (apache_java_vhost.jk is not defined) or (apache_java_vhost.jk) %}
+	    			JkUnMount /.well-known/acme-challenge/* loadbalancer1
+	    		{% endif %}
+			{% endif %}
+{% if apache_java_vhost.parking is defined%}
+			Include /etc/apache2/lrv/LaRoueVerte_Parking_Common.conf
+{% else %}
+				{% if (apache_java_vhost.jk is not defined) or (apache_java_vhost.jk) %}
+			    	Include /etc/apache2/lrv/LRV_Vhost1_Common.conf
+			    {% else %}
+			    	Include /etc/apache2/lrv/LRV_Vhost_Common_nojk.conf
+			    {% endif %}
+{% if (apache_java_vhost.externalvhostdirectives is defined) %}
+				Include /{{apache_java_vhost.externalvhostdirectives}}
+{% endif %}
+{% if apache_java_vhost.isolated is defined and apache_java_vhost.isolated %}
+				Include /etc/apache2/lrv/LRV_Isolation.conf
+{% endif %}
+{% if apache_java_vhost.include is defined %}
+				    Include {{apache_java_vhost.include}}
+{% endif %}
+{% endif %}
+{% endif %} {#if apache_java_vhost.letsencrypt is defined or apache_java_vhost.externalcertificate is defined or apache_java_vhost.selfsigned is defined#}
+</VirtualHost>
+
+{% if apache_java_vhost.letsencrypt is defined or apache_java_vhost.externalcertificate is defined or apache_java_vhost.selfsigned is defined%}
+<VirtualHost *:443>
+	ServerName {{apache_java_vhost.servername}}
+	{% if apache_java_vhost.serveralias is defined %}
+	{% for letsencryptdomain in apache_java_vhost.serveralias %} 
+		ServerAlias {{letsencryptdomain}}
+	{% endfor %}
+	{%endif %}
+	
+	{% if apache_java_vhost.hsts is defined%}
+		Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	{%endif %}
+	
+	{% if apache_java_vhost.securityHeaders is defined%}
+		Header always append X-Frame-Options SAMEORIGIN
+		Header always set X-XSS-Protection "1; mode=block"
+		Header always set X-Content-Type-Options nosniff
+	{%endif %}
+
+	{% if apache_java_vhost.apache_java_vhost_auth_users is defined %}
+		<Location / >
+			AuthType Basic
+			AuthName "{{apache_java_vhost.servername}} basic auth"
+			AuthBasicProvider file
+			AuthUserFile /etc/apache2/lrv/passwords
+			Require user{% for apache_java_vhost_auth_user in apache_java_vhost.apache_java_vhost_auth_users %} {{apache_java_vhost_auth_user.login}}{% endfor %}
+			
+			RequestHeader unset Authorization
+		</Location>
+	{% endif %}
+
+	{% if apache_java_vhost.parking is defined%}
+		Include /etc/apache2/lrv/LaRoueVerte_Parking_Common.conf
+	{% else %}
+			{% if (apache_java_vhost.jk is not defined) or (apache_java_vhost.jk) %}
+		    	Include /etc/apache2/lrv/LRV_Vhost1_Common.conf
+		    {% else %}
+		    	Include /etc/apache2/lrv/LRV_Vhost_Common_nojk.conf
+		    {% endif %}
+		{% if (apache_java_vhost.externalvhostdirectives is defined) %}
+			Include /{{apache_java_vhost.externalvhostdirectives}}
+		{% endif %}
+		{% if apache_java_vhost.isolated is defined and apache_java_vhost.isolated%}
+			Include /etc/apache2/lrv/LRV_Isolation.conf
+		{% endif %}
+		{% if apache_java_vhost.include is defined %}
+		    Include {{apache_java_vhost.include}}
+		{% endif %}
+	{% endif %}
+	{% if apache_java_vhost.externalcertificate is defined %}
+	        SSLEngine on
+	        SSLCertificateFile    {{apache_java_vhost.externalcertificate}}.cert
+	        SSLCertificateKeyFile {{apache_java_vhost.externalcertificate}}.key
+	        SSLCACertificateFile  {{apache_java_vhost.externalcertificate}}.chain
+	{% else %}
+		{% if apache_java_vhost.selfsigned is defined %}
+			Include /etc/apache2/lrv/LRV_SelfSigned_Common_HTTPS.conf
+		{% else %}
+			{% if letsencryptcertificate.stat.exists %}
+			        SSLEngine on
+			        SSLCertificateFile    /etc/letsencrypt/live/{{apache_java_vhost.servername}}/cert.pem
+			        SSLCertificateKeyFile /etc/letsencrypt/live/{{apache_java_vhost.servername}}/privkey.pem
+			        SSLCACertificateFile  /etc/letsencrypt/live/{{apache_java_vhost.servername}}/chain.pem
+			{% endif %}
+		{% endif %}
+	{% endif %}
+	
+	{% if apache_java_vhost.tls12Min is defined and apache_java_vhost.tls12Min %}
+		SSLProtocol all -SSLv3 -TLSv1.1 -TLSv1
+	{%endif %}
+
+	{% if (apache_java_vhost.http2 is defined and apache_java_vhost.http2) %}
+		Protocols h2 http1/1
+		SSLHonorCipherOrder     on
+	{% endif %}
+</VirtualHost>
+{% endif %}

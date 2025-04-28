@@ -1,0 +1,93 @@
+---
+
+- name: Make our own conf dir
+  file: dest=/etc/iptables.d state=directory
+
+- name: install iptables apt
+  apt: name=iptables state=present
+  
+- name: ensure /etc/iptables.v2.up.rules exists
+  copy: content="" dest=/etc/iptables.v2.up.rules force=false
+
+- name: install iptables service in systemd
+  copy: src=iptables/iptables-v2.service dest=/etc/systemd/system/iptables.service mode=644
+  notify: 
+    - iptables restart
+    
+- name: install iptables script in systemd
+  copy: src=iptables/systemd-iptables-v2 dest=/usr/local/sbin/systemd-iptables mode=755
+  when: not ip6tables is defined 
+  notify: 
+    - iptables restart
+    
+- name: install iptables & ip6tables script in systemd
+  copy: src=iptables/systemd-iptables-v2.ipv6 dest=/usr/local/sbin/systemd-iptables mode=755
+  when: ip6tables is defined 
+  notify: 
+    - iptables restart
+
+- name: Copy header for iptables rules
+  template: src=iptables/00_header.conf.j2 dest=/etc/iptables.d/00_header.conf
+  notify: 
+    - iptables restart
+
+- name: Copy footer for iptables rules
+  template: src=iptables/99_footer.conf.j2 dest=/etc/iptables.d/99_footer.conf
+  notify: 
+    - iptables restart
+
+- name: Copy port knocking rules if needed
+  template: src=iptables/98_port_knocking.conf.j2 dest=/etc/iptables.d/98_port_knocking.conf
+  when: iptables_ssh_port_knocking is defined
+  notify:
+    - iptables restart
+
+- name: Delete port knocking rules if needed
+  file: dest=/etc/iptables.d/98_port_knocking.conf state=absent
+  when: iptables_ssh_port_knocking is not defined
+  notify:
+    - iptables restart
+
+- name: Copy blacklist for iptables rules
+  template: src=iptables/10_blacklist.sh.j2 dest=/etc/iptables.d/10_blacklist.sh mode=744
+  notify: 
+    - iptables restart
+
+- name: install iptables rules
+  template: src=iptables/50_iptables-v2.conf.j2 dest=/etc/iptables.d/50_iptables.conf
+  notify:
+    - iptables restart
+
+- name: install Zabbix iptables rules
+  template: src=iptables/59_iptables_zabbix.conf.j2 dest=/etc/iptables.d/59_iptables_zabbix.conf
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+  notify:
+    - iptables restart
+
+- name: install Ping iptables rules
+  template: src=iptables/60_iptables_ping.conf.j2 dest=/etc/iptables.d/60_iptables_ping.conf
+  notify:
+    - iptables restart
+
+- name: ensure /etc/iptables.v6.up.rules exists
+  copy: content="" dest=/etc/iptables.v6.up.rules force=false
+    
+- name: install ip6tables rules
+  template: src=iptables/iptables.v6.up.rules.j2 dest=/etc/iptables.v6.up.rules
+  when: ip6tables is defined 
+  notify:
+    - iptables restart
+
+- name: creates empty firewall.blacklist if not found
+  copy: dest=/etc/firewall.blacklist force=no content=
+  notify:
+    - iptables restart
+
+- name: Create /home/root/scripts/ folder
+  file: path=/home/root/scripts/ state=directory
+  
+- name: Copy script that can update firewall.blacklist from fail2ban
+  copy: src=home/root/scripts/updateFirewallBlacklistFromFail2ban.sh dest=/home/root/scripts/updateFirewallBlacklistFromFail2ban.sh mode=700
+    
+- meta: flush_handlers    
+  

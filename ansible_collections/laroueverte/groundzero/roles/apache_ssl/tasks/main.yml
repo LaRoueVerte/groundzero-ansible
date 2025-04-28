@@ -1,0 +1,9 @@
+---
+
+# Common SSL configuration.
+# Should give A+ grade in https://www.ssllabs.com/ssltest/
+#################################
+# Parameters : 
+
+- include: apache_ssl.yml
+  tags: apache_ssl

@@ -1,0 +1,40 @@
+---
+
+- set_fact: exim4_certif_folder="/etc/exim4/{{exim4_dkim}}"
+
+- set_fact: exim4_certif_private="/etc/exim4/{{exim4_dkim}}/{{exim4_dkim}}-private.pem"
+
+- set_fact: exim4_certif_public="/etc/exim4/{{exim4_dkim}}/{{exim4_dkim}}.pem"
+
+- name: Prepare domain folder
+  file: state=directory dest={{exim4_certif_folder}}
+ 
+- name: Generates dkim private/public key pair
+  command: openssl genrsa -out {{exim4_certif_private}} 1024
+  args:
+    creates: "{{exim4_certif_private}}"
+  notify: 
+    - exim4_restart
+ 
+- name: Extracts public key
+  command: openssl rsa -in {{exim4_certif_private}} -out {{exim4_certif_public}} -pubout
+  args:
+    creates: "{{exim4_certif_public}}"
+  notify: 
+    - exim4_restart
+
+- shell: cat {{exim4_certif_public}}
+  register: exim4_certif_public_action
+  
+- debug: msg="You have to generate TXT DNS Record named :"
+- debug: msg='{{exim4_dkim_selector}}._domainkey.{{exim4_dkim}}="k=rsa; p=PUBKEY"'
+- debug: msg="PUBKEY is the public below, remove first and last line and join all lines in a single line"
+- debug: msg="{{exim4_certif_public_action.stdout}}"
+- debug: msg="Example below:"
+- debug: msg='20150726._domainkey.example.com IN TXT "k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC30aRx6rlDA7LkhsM1AtuW8LoBrjo6RZH3yS7nC9EgqV5ntFIzQyCo88hNBz72XwwFAAGKuCVIwcxV06lAHWnUTt+ZyjJlP/4XJo9JH76ZJu9vUTaHw753IY3SZR+xEnJuyBr/LZknAEFqHuDP7V3+B6SWuBElSFFnImnP7oeMQQIDAQAB'
+
+- name: Exim4 DKIM Configuration
+  template: src=etc/exim4/conf.d/main/00_local_macros.j2 dest=/etc/exim4/exim4.conf.localmacros
+  notify: 
+    - exim4_restart
+  

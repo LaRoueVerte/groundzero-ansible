@@ -1,0 +1,13 @@
+---
+
+- name: Install Tools
+  apt: name={{item.soft}} state=present
+  with_items:
+    - soft: ncdu
+    - soft: iptraf-ng
+    - soft: bind9-dnsutils
+    - soft: needrestart
+    - soft: bash-completion
+    - soft: pigz
+    - soft: pv
+  

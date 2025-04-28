@@ -1,0 +1,47 @@
+---
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#port\s+=\d+" line="port = {{(postgresql_port is defined)|ternary(postgresql_port, '5432')}}" regexp="^port = "
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#logging_collector\s+=\s+off" line="logging_collector = on"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_directory\s+=\s+" line="log_directory = '/var/log/postgresql/{{postgresql_version}}'"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_filename\s+=\s+'postgresql-%Y-%m-%d_%H%M%S.log'" line="log_filename = 'postgresql-%Y-%m-%d.log'"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_file_mode\s+=\s+0600" line="log_file_mode = 0604"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_statement\s+=\s+'none'" line="log_statement = 'mod'"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_connections\s+=\s+off" line="log_connections = on"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_disconnections\s+=\s+off" line="log_disconnections = on"
+  notify: 
+    restart postgresql
+
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#log_min_duration_statement\s+=\s+-1" line="log_min_duration_statement = 500"
+  notify: 
+    restart postgresql
+    
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf insertbefore="^\#listen_addresses\s+=\s+'localhost'" line="listen_addresses = '*'"
+  notify: 
+    restart postgresql
+    
+- lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf regexp="^{{ item.key }}\s+=\s+" insertbefore="^\#{{ item.key }}\s+=\s+" line="{{ item.key }} = {{ item.value }}"
+  notify: 
+    restart postgresql
+  when: postgresql_conf is defined
+  loop: "{{ postgresql_conf | dict2items }}"

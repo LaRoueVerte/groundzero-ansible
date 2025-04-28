@@ -1,0 +1,31 @@
+host_role: mycompany
+debian_distri: debian12
+java_version: 22
+
+unset_cookieconsent_cookie: true
+letsencrypt_checkcertificate: true
+apache_letsencrypt_autoreload: true
+apache_vhosts: [
+    {
+      serverindex: "001",
+      servername: "mycompany.fr",
+      serveralias: ["www.mycompany.fr"],
+      jk: false,
+      letsencrypt: true,
+      letsencrypt_web: true,
+      include: "/etc/apache2/lrv/mycompany.conf"
+    },
+  ]
+apache_default_vhost_no: true
+apache_modevasive: false
+apache_modhttp2: true
+
+postgresql_version: 17
+postgresql_postgis_version: 3
+postgresql_repository: pgdg
+postgresql_application_user: 'mycompany'
+postgresql_clients: []
+
+postgresql_db_schema_name: 'mycompany'
+postgresql_db_nightly_maintenance_hour: '15'
+postgresql_db_nightly_maintenance_minute: '3'

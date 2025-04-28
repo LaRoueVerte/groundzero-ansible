@@ -1,0 +1,19 @@
+---
+
+- name: create root ssh key
+  user: name=root generate_ssh_key=true
+
+- name: Get root user public key
+  fetch: src=/root/.ssh/id_rsa.pub dest={{role_path}}/../../data
+  
+- name: Create openvpn scripts folder
+  file: path=/home/root/scripts/openvpn state=directory group=root owner=root
+  
+- name: Install Open VPN Backup scripts 
+  template: src=home/root/scripts/openvpn/openVpnBackup.sh.j2 dest=/home/root/scripts/openvpn/openVpnBackup.sh group=root owner=root mode=0755
+
+- name: Create root log folder
+  file: path=/var/log/root state=directory group=root owner=root
+  
+- name: Ensure root_cron_openvpn-backup.log exists
+  file: path=/var/log/root/root_cron_openvpn-backup.log owner=root group=root state=touch modification_time=preserve access_time=preserve

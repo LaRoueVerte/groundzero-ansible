@@ -1,0 +1,10 @@
+---
+- name: Copy zabbix lrv checks file
+  copy: src=etc/zabbix/zabbix_agentd.conf.d/postgresql.conf dest=/etc/zabbix/zabbix_agentd.conf.d/
+  notify: restart zabbix agent
+- name: Install monitoring scripts 
+  template: src=home/root/scripts/zabbix/{{item}}.j2 dest=/home/root/scripts/zabbix/{{item}} mode=a+x
+  loop:
+        - getReplicationRole.sh
+        - getReplicationSlotsCount.sh
+

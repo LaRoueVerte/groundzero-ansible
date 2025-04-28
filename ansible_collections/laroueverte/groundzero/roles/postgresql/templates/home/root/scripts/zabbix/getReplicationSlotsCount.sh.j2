@@ -1,0 +1,23 @@
+#!/bin/bash
+cd `dirname $0`
+. ../base.sh
+
+if [[ ! "$1" == "ALL" ]] && [[ ! "$1" == "ACTIVE" ]] && [[ ! "$1" == "INACTIVE" ]] ; then
+        echo "Usage $0 ALL|ACTIVE|INACTIVE "
+        exit 1
+        fi;
+DB_NAME=$1
+
+COND="no category found"
+if [[ "$1" == "ALL" ]] ; then
+        COND=
+elif [[ "$1" == "ACTIVE" ]]; then
+        COND=" where active";
+elif [[ "$1" == "INACTIVE" ]] ; then
+        COND=" where not active";
+fi
+
+OUTPUT=`psql -U postgres -c "select count(*) from pg_replication_slots $COND" -A -t`
+RES=$?
+echo $OUTPUT
+exit $RES

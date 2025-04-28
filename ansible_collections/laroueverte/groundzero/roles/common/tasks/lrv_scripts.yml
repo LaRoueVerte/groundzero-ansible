@@ -1,0 +1,21 @@
+---
+
+- file: path=/home/root/scripts state=directory
+
+- file: path=/home/root/scripts/keepRecent state=directory
+
+- copy: src=home/root/scripts/base.sh dest=/home/root/scripts/base.sh mode=0755
+
+- copy: src=home/root/scripts/keepRecent/ dest=/home/root/scripts/keepRecent/ mode=0755
+
+- copy: src=home/root/scripts/split.sh dest=/home/root/scripts/split.sh mode=0755
+
+- name: Install Tools needed by checkDebianPackages.sh
+  apt: name={{item.soft}} state=present
+  with_items:
+    - soft: deborphan
+    - soft: aptitude
+
+- copy: src=home/root/scripts/checkDebianPackages.sh dest=/home/root/scripts/checkDebianPackages.sh mode=0755
+
+

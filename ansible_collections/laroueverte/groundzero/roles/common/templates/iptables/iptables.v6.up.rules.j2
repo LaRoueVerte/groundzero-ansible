@@ -1,0 +1,22 @@
+*filter
+
+#Autoriser connexion sortantes (deja initiees)
+-A INPUT -i {{ansible_default_ipv4.alias}} -m state --state ESTABLISHED -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+
+#ping ipv6
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A OUTPUT -p ipv6-icmp -j ACCEPT
+
+{% if 'laroueverte.groundzero.apache_java' in ansible_role_names %}
+#Autoriser port 80 HTTP en entree
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 80 -j ACCEPT
+#Autoriser port 443 HTTP en entree
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 443 -j ACCEPT
+{% endif %}
+
+#Tout rejeter ( a laisser a la fin en cas de plantage )
+-A INPUT -i {{ansible_default_ipv4.alias}} -j DROP
+
+COMMIT

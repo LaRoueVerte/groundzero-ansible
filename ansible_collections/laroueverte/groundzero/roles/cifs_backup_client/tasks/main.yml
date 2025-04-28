@@ -1,0 +1,26 @@
+---
+
+#################################
+# Role installing :
+# - a backup folder mounted in /mnt/cifsbackup/{{backup_folder}} pointing to an ovh backup storage
+
+#################################
+# Parameters : 
+# - ftp_backup_mount: the mount point to use (/mnt/cifsbackup by default if not specified)
+# - backup_folder : the name of the folder into /mnt/cifsbackup
+# - cifs_backup_user:  the user that will own the director /mnt/cifsbackup/{{backup_folder}}
+# - ftp_backup_server:  the name of the backup's server
+# - ftp_backup_login:  the login of the backup's server
+#################################
+# Example : 
+#    - {role: cifs_backup_client, 
+#             backup_folder: '{{postgresql_db_schema_name}}backup',
+#             cifs_backup_user: 'transfert',
+#             ftp_backup_server: 'ftpback-rbx3-343.ovh.net',
+#             ftp_backup_login: 'nsXXXXXX.ip-51-255-86.eu'
+#       }
+
+- include: cifs_install.yml
+  tags:
+   - cifs_backup_setup
+  

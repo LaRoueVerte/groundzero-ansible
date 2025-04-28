@@ -1,0 +1,9 @@
+---
+
+- name: Create directory for overriding logrotate
+  file: state=directory dest=/etc/systemd/system/logrotate.service.d
+  notify: systemd reload
+
+- name: Override logrotate conf to be able to run java
+  copy: src=etc/systemd/system/logrotate.service.d/local.conf dest=/etc/systemd/system/logrotate.service.d/local.conf
+  notify: systemd reload

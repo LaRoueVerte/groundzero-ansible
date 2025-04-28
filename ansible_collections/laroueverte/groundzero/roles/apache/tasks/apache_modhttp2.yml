@@ -1,0 +1,10 @@
+---
+
+- name: Install libnghttp2-14
+  apt: state=present name=libnghttp2-14
+  notify: apache_restart
+  
+- name: Enable mod_http2 in apache
+  apache2_module: state='present' name=http2
+  notify: apache_restart
+  

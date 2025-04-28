@@ -1,0 +1,10 @@
+[Unit]
+Description=IPv4 firewall with iptables
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/systemd-iptables start
+
+[Install]
+WantedBy=basic.target

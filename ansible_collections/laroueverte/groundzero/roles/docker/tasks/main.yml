@@ -1,0 +1,22 @@
+---
+#################################
+# Role installing :
+# - docker-engine
+# - docker-compose
+# - adds a user to docker group
+
+#################################
+# Dependencies : 
+
+#################################
+# Parameters : 
+# - docker_user : user that will be added to docker group
+
+- include: docker.yml
+  tags:
+   - docker
+   
+- include: docker_service_local_conf.yml
+  tags:
+   - docker
+   - docker_service_local_conf

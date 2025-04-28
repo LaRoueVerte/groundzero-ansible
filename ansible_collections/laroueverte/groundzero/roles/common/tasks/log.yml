@@ -1,0 +1,67 @@
+
+- name: Install rsyslog if not present
+  apt: name=rsyslog state=present
+
+- name: stat /var/log
+  stat: path=/var/log
+  register: varlog
+
+- file: dest=/home/log state=directory
+  when: not varlog.stat.islnk
+  
+- name: Move /var/log to /home/log does not exist
+  command: mv /var/log /home/
+  when: not varlog.stat.islnk
+  
+- name: Create link /home/log /var/log
+  file: src=/home/log dest=/var/log state=link
+  when: not varlog.stat.islnk
+ 
+- name: reboot after /var/log change
+  shell: "sleep 2s && shutdown -r now &"
+  poll: 0
+  when: not varlog.stat.islnk
+
+- name: host_wait_down. Please check that the host is rebooting, if it doesn't please reboot it to continue this task.
+  local_action: 
+    wait_for 
+    host={{inventory_hostname}}
+    port=22
+    state=absent
+    timeout=300
+  when: not varlog.stat.islnk
+
+- name: host_wait_up
+  local_action: 
+    wait_for 
+    host={{inventory_hostname}}
+    port=22
+    state=started
+    timeout=300
+  when: not varlog.stat.islnk
+    
+- name: Creates standard log directory for crons
+  file: dest=/var/log/root/ state=directory
+
+- name: Install logrotate
+  apt: name=logrotate state=present
+
+- name: Install logrotation of these cron logs
+  copy: src=etc/logrotate.d/root dest=/etc/logrotate.d/root
+  
+- name: Override rsyslog to set syslog to daily rotation
+  copy: src=etc/logrotate.d/rsyslog dest=/etc/logrotate.d/rsyslog
+  notify: systemd reload
+
+- name: Add acl package if log reader is enabled
+  apt: name=acl state=present
+  when: logreader_enabled is defined and logreader_enabled
+  
+- name: Add needed acls to adm group if log reader is enabled (default for future created files)
+  acl: default=yes entity=adm etype=group path=/home/log permissions=rx recursive=true state=present
+  when: logreader_enabled is defined and logreader_enabled
+    
+- name: Add needed acls to adm group if log reader is enabled (for existing files)
+  acl: entity=adm etype=group path=/home/log permissions=rx recursive=true state=present
+  when: logreader_enabled is defined and logreader_enabled
+    

@@ -1,0 +1,6 @@
+
+#Autoriser le port 5432 pour les frontaux
+{% for postgresql_client_hostname in postgresql_clients %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 5432 --source {{hostsdata[postgresql_client_hostname].ip}} -j ACCEPT
+{% endfor %}
+

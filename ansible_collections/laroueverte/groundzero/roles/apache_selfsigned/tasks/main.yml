@@ -1,0 +1,22 @@
+---
+#################################
+# Role installing :
+# - a self signed certificate and a ready to use .conf for a vhost
+
+#################################
+# Dependencies : 
+# - apache : apache role is not included and must be included before calling this role 
+
+#################################
+# Parameters : 
+# - apache_selfsigned_domain : the domain to self sign
+
+#################################
+# Example : 
+#    - {role: apache_selfsigned, 
+#             apache_selfsigned_domain: thisserver.com
+#      }
+
+
+- include: apache_selfsigned.yml
+  tags: apache_selfsigned

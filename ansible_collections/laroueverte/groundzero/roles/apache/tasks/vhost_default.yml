@@ -1,0 +1,22 @@
+---
+
+- file: name=/var/www/default state=directory
+
+- copy: src=var/www/default/index.html dest=/var/www/default/index.html
+
+- file: path=/etc/apache2/sites-enabled/000-default.conf state=absent
+  notify: apache_restart
+
+- name: Copy ServerStatus's default vhost
+  copy: src=etc/apache2/lrv/Vhost_ServerStatus.conf dest=/etc/apache2/lrv/Vhost_ServerStatus.conf
+  notify: apache_restart
+  
+- name: vhost install
+  template: src=etc/apache2/sites-enabled/001_Default.conf.j2 dest=/etc/apache2/sites-enabled/001_Default.conf
+  when: apache_default_vhost_no is undefined
+  notify: apache_restart
+
+- name: Enables mod_alias in apache2
+  apache2_module: state=present name=alias
+  notify: apache_restart
+

@@ -1,0 +1,41 @@
+---
+
+- name: Install Exim4 Daemon Heavy
+  apt: name=exim4-daemon-heavy state=present
+
+- name: Set Exim4 default sender addresses
+  lineinfile: 'dest=/etc/email-addresses line="root: {{ common_monitoring_email }}" regexp="^root:" insertafter=EOF' 
+  notify: 
+    - exim4_restart
+ 
+## DKIM
+- include: exim4_dkim.yml
+  when: exim4_dkim is defined
+
+- name: Exim4 Configuration not supported by debian for ipv6
+  lineinfile: dest=/etc/exim4/exim4.conf.template line='disable_ipv6 = true' insertafter='^exim_path'
+  notify: 
+    - exim4_restart
+
+- name: Exim4 Configuration
+  lineinfile:
+    dest: /etc/exim4/update-exim4.conf.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^dc_eximconfig_configtype=', line: "dc_eximconfig_configtype='internet'" }
+    - { regexp: '^dc_other_hostnames=', line: "dc_other_hostnames=''" }
+    - { regexp: '^dc_local_interfaces=', line: "dc_local_interfaces='127.0.0.1 ; ::1'" }
+    - { regexp: '^dc_readhost=', line: "dc_readhost=''" }
+    - { regexp: '^dc_relay_domains=', line: "dc_relay_domains=''" }
+    - { regexp: '^dc_relay_nets=', line: "dc_relay_nets=''" }
+    - { regexp: '^dc_smarthost=', line: "dc_smarthost=''" }
+    - { regexp: '^CFILEMODE=', line: "CFILEMODE='644'" }
+    - { regexp: '^dc_use_split_config=', line: "dc_use_split_config='false'" }
+    - { regexp: '^dc_hide_mailname=', line: "dc_hide_mailname=''" }
+    - { regexp: '^dc_mailname_in_oh=', line: "dc_mailname_in_oh='true'" }
+    - { regexp: '^dc_localdelivery=', line: "dc_localdelivery='mail_spool'"}
+  notify: 
+    - exim4_restart
+  
+- meta: flush_handlers

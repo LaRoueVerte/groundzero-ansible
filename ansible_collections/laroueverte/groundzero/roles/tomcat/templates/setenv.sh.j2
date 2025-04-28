@@ -1,0 +1,20 @@
+export CATALINA_OUT=/var/log/tomcat/{{tomcat_instance}}/catalina.out
+#Following opts to bypass the classic random generator leading to slow startup (http://marc.info/?l=tomcat-user&m=132769606728228&w=2) 
+export CATALINA_OPTS="-Djava.security.egd=file:/dev/./urandom"
+export CATALINA_OPTS="$CATALINA_OPTS -Xms64m -Xmx1800m"
+export CATALINA_OPTS="$CATALINA_OPTS -Djava.net.preferIPv4Stack=true"
+export CATALINA_OPTS="$CATALINA_OPTS -Dsun.net.inetaddr.ttl=600"
+export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.catalina.STRICT_SERVLET_COMPLIANCE=false"
+export CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote"
+export CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
+export CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+export CATALINA_OPTS="$CATALINA_OPTS -DLRV_SERVER_ID={{host_role}}_tomcat{{tomcat_instance}}"
+export CATALINA_OPTS="$CATALINA_OPTS -DLRV_SERVER_ENV={{tomcat_environment}}"
+export CATALINA_OPTS="$CATALINA_OPTS -Dsun.net.inetaddr.ttl=5"
+{% if (tomcat_log4j_override is defined)%}
+export CATALINA_OPTS="$CATALINA_OPTS -Dlog4j.configuration=file:{{tomcat_log4j_override}}"
+{% endif %}
+export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.catalina.connector.RECYCLE_FACADES=false"
+{% if (tomcat_java_home_override is defined)%}
+export JAVA_HOME={{tomcat_java_home_override}}
+{% endif %}

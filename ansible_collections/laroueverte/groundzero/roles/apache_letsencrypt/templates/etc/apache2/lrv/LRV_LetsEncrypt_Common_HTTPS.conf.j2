@@ -1,0 +1,20 @@
+#Common VHOST part to be included in any HTTPS vhost supporting letsencrypt encryption. 
+#Must be included AFTER using letsencrypt_enable role.
+
+#Defines a server alias for all domains in certificate
+
+#ServerName {{apache_letsencrypt_domains_main}}
+
+{% if apache_letsencrypt_domains_others is defined %}
+	{% for letsencryptdomain in apache_letsencrypt_domains_others.split(",") %} 
+		#ServerAlias {{letsencryptdomain}}
+	{% endfor %}
+{% endif %}
+
+{% if letsencryptcertificate.stat.exists or letsencryptcertificateafter.stat.exists%}
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/{{apache_letsencrypt_domains_main}}/cert.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/{{apache_letsencrypt_domains_main}}/privkey.pem
+    SSLCACertificateFile  /etc/letsencrypt/live/{{apache_letsencrypt_domains_main}}/chain.pem
+{% endif %}
+    

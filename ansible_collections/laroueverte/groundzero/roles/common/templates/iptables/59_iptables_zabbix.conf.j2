@@ -1,0 +1,16 @@
+
+{% if 'laroueverte.groundzero.zabbix_monitored' in ansible_role_names %}
+#=================
+#== Monitoring
+#Autoriser port 10050 pour les connexions en provenance du serveur zabbix : {{zabbix_server_host}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 10050 --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+#Autoriser le ping depuis le serveur zabbix : {{zabbix_server_host}}
+-A INPUT -i {{ansible_default_ipv4.alias}} -p icmp --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+{% if 'laroueverte.groundzero.tomcat' in ansible_role_names %}
+#Autoriser les port 2345 et 2346 pour le JMX
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 2345 --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 2346 --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 12345 --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+-A INPUT -i {{ansible_default_ipv4.alias}} -p tcp --dport 12346 --source {{hostsdata[zabbix_server_host].ip}} -j ACCEPT
+{% endif %}
+{% endif %}

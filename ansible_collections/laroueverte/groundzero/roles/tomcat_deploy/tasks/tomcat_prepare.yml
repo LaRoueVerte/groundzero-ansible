@@ -1,0 +1,32 @@
+---
+
+- name: Sets vars
+  set_fact:
+    war_url: "{{ delivery_base_url }}/{{tomcat_build_number}}/{{ war_name }}"
+    dest_folder: /home/tomcat/deployments/{{tomcat_build_number}}/{{tomcat_name}}
+
+- name: Register dest folder
+  stat: path={{dest_folder}}
+  register: already_prepared 
+
+- name: Sets vars
+  set_fact:
+    dest_war: "{{dest_folder}}/{{ war_name }}"
+      
+- name: Prepare deployment of app {{tomcat_name}}
+  file: dest={{dest_folder}}/ROOT owner=tomcat group=tomcat state=directory
+  when: not already_prepared.stat.exists
+
+- name: Fetch delivery
+  get_url: validate_certs=no dest={{dest_war}} url={{war_url}} force=yes
+  when: not ansible_check_mode and not already_prepared.stat.exists
+
+- name: Unjar
+  shell: cd {{dest_folder}}/ROOT && jar xvf {{dest_war}}
+  when: not ansible_check_mode and not already_prepared.stat.exists
+
+- name: Change owner
+  shell: chown -R tomcat:tomcat {{dest_folder}}/ROOT 
+  when: not ansible_check_mode and not already_prepared.stat.exists
+
+  

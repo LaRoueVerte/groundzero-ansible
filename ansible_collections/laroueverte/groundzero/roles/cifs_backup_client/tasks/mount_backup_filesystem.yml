@@ -1,0 +1,24 @@
+---
+
+- name: stat {{ local_mount_root }}/{{ backup_folder }}
+  stat: path={{ local_mount_root }}/{{ backup_folder }}
+  register: fullbackupfolder
+
+- name: Create {{ local_mount_root }}
+  file: dest={{ local_mount_root }} state=directory owner=root
+
+- name: Mount {{ remote_mount_root }} on {{ local_mount_root }}. If following task fails, you need to activate ftp backup with a CIFS access for this server into OVH Manager.
+  mount: name={{ local_mount_root }} src="{{ remote_mount_root }}" fstype=cifs state=mounted opts='sec=ntlm,uid=root,gid=root,dir_mode=0700,username=root,password=,vers=1.0'
+  when: not fullbackupfolder.stat.exists
+  
+- name: Create {{ backup_folder }} on {{ local_mount_root }} 
+  file: dest={{ local_mount_root }}/{{ backup_folder }} state=directory  owner=root
+  when: not fullbackupfolder.stat.exists
+  
+- name: Unmount {{ remote_mount_root }} on {{ local_mount_root }}
+  mount: name={{ local_mount_root }} src="{{ remote_mount_root }}" fstype=cifs state=absent
+  when: not fullbackupfolder.stat.exists
+  
+- name: Mount {{ local_mount_root }}/{{ backup_folder }} on {{ remote_mount_root }}/{{ backup_folder }}. If following task fails, you need to activate ftp backup with a CIFS access for this server into OVH Manager.
+  mount: name={{ local_mount_root }}/{{ backup_folder }} src={{ remote_mount_root }}/{{ backup_folder }} fstype=cifs state=mounted opts='sec=ntlm,uid={{cifs_backup_user}},gid={{cifs_backup_user}},dir_mode=0700,username=root,password=,vers=1.0'
+  

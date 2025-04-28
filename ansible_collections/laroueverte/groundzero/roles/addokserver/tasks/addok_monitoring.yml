@@ -1,0 +1,11 @@
+---
+- name: Adds monitoring script
+  copy: src=home/root/scripts/zabbix/checkAddokUpdates.sh dest=/home/root/scripts/zabbix/checkAddokUpdates.sh mode=+rx 
+
+- name: Install addok-zabbix sudoers file
+  copy: src=etc/sudoers/addokzabbix dest=/etc/sudoers.d/addokzabbix mode=440
+
+- name: Adds zabbix configuration file
+  copy: src=etc/zabbix/zabbix_agentd.conf.d/addok.conf dest=/etc/zabbix/zabbix_agentd.conf.d/addok.conf
+  notify: restart zabbix agent
+   

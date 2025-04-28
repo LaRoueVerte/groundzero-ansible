@@ -1,0 +1,1 @@
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkAddokUpdates.sh

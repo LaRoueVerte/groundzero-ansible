@@ -1,0 +1,22 @@
+---
+
+- name : Install cron if needed
+  apt: name=cron state=present
+
+- file: path=/home/root/scripts state=directory
+
+- name: copy getDebianEolDaysLeft script
+  template: src=home/root/scripts/getDebianEolDaysLeft.sh.j2 dest=/home/root/scripts/getDebianEolDaysLeft.sh mode=755
+  
+- name: Create folder /home/root/scripts/crons
+  file:
+    path: /home/root/scripts/crons
+    state: directory
+
+- name: copy checkDebianEolAndAlert script
+  template: src=home/root/scripts/crons/checkDebianEolAndAlert.sh.j2 dest=/home/root/scripts/crons/checkDebianEolAndAlert.sh mode=755
+  
+- name: add cronjob
+  cron: state=present user=root name='Debian End Of Life Support check' minute='07' hour='04' day='6' job="/home/root/scripts/crons/checkDebianEolAndAlert.sh"
+
+   

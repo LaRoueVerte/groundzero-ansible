@@ -1,0 +1,7 @@
+---
+
+- name: Rollback deployment of app {{tomcat_name}} in tomcat{{tomcat_deploy_instancenum}}
+  fail: msg="fail !!" 
+  
+  
+  

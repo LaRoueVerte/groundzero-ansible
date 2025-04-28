@@ -1,0 +1,16 @@
+---
+- name: Enable apache2 proxy modules
+  ansible.builtin.apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - proxy
+    - proxy_http
+  tags: apache2
+- name: Copy mycompany.fr
+  ansible.builtin.copy:
+    src: etc/apache2/lrv/mycompany.conf
+    dest: /etc/apache2/lrv/mycompany.conf
+    mode: "644"
+  tags: mycompany
+  notify: apache_restart

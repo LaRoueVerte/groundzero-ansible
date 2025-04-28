@@ -1,0 +1,14 @@
+- name: install vlogger dependencies
+  apt: name=libtimedate-perl state=present
+
+- name: install vlogger (if fails, must be installed using dpkg as this package was removed from debian 12...)
+  apt: name=vlogger state=present
+  when: apache.data[debian_distri].vlogger_source == 'distri'
+
+- name: copy vlogger package
+  copy: src=vlogger_1.3-4.1_all.deb dest=/root/vlogger_1.3-4.1_all.deb mode=600
+  when: apache.data[debian_distri].vlogger_source == 'external'
+
+- name: Installation of vlogger from external package
+  apt: deb=/root/vlogger_1.3-4.1_all.deb state=present
+  when: apache.data[debian_distri].vlogger_source == 'external'

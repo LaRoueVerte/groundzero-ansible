@@ -1,0 +1,35 @@
+{% if iptables_ssh_port_knocking is defined %}
+###### Accept established ssh connections #######
+-A INPUT -p tcp --dport 22 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+
+####### Port knocking steps #######
+{% for port_knocking in iptables_ssh_port_knocking %}
+-N STATE{{loop.index - 1}}
+{% if loop.index > 1 %}
+-A STATE{{loop.index - 1}} -j LOG --log-prefix "Entering STATE{{loop.index - 1}} "
+-A STATE{{loop.index - 1}} -m recent --name KNOCK{{loop.index - 1}} --remove
+### KNOCK{{loop.index - 1}} again, therefore we stay in STATE{{loop.index - 1}}
+-A STATE{{loop.index - 1}} -p tcp --dport {{iptables_ssh_port_knocking[loop.index - 2]}} -m recent --name KNOCK{{loop.index - 1}} --set -j DROP
+{% endif %}
+-A STATE{{loop.index - 1}} -p tcp --dport {{port_knocking}} -j LOG --log-prefix "KNOCK{{loop.index}}: "
+-A STATE{{loop.index - 1}} -p tcp --dport {{port_knocking}} -m recent --name KNOCK{{loop.index}} --set -j DROP
+-A STATE{{loop.index - 1}} -j DROP
+
+{% endfor %}
+
+####### At this point, we can allow SSH
+-N STATE{{iptables_ssh_port_knocking|length}}
+-A STATE{{iptables_ssh_port_knocking|length}} -j LOG --log-prefix "Entering STATE{{iptables_ssh_port_knocking|length}} SSH ACCESS GRANTED "
+-A STATE{{iptables_ssh_port_knocking|length}} -p tcp --dport 22 -j ACCEPT
+-A STATE{{iptables_ssh_port_knocking|length}} -j STATE0
+
+####### Setting up knocking sequence
+{% for i in range(iptables_ssh_port_knocking|length, 0, -1) %}
+{% if i == iptables_ssh_port_knocking|length %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -m recent --name KNOCK{{i}} --rcheck --seconds 60 -j STATE{{i}}
+{% else %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -m recent --name KNOCK{{i}} --rcheck --seconds 30 -j STATE{{i}}
+{% endif %}
+{% endfor %}
+-A INPUT -i {{ansible_default_ipv4.alias}} -j STATE0
+{% endif %}

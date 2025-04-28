@@ -1,0 +1,43 @@
+---
+
+- name: launch updatedb
+  shell: updatedb
+  
+- name: sshd restart
+  service: name=sshd state=restarted 
+
+- name: iptables restart
+  shell: systemctl --system daemon-reload && systemctl enable iptables && systemctl restart iptables
+    
+- name: systemd reload
+  shell: systemctl --system daemon-reload
+  
+- name: fail2ban restart
+  service: name=fail2ban enabled=true state=restarted 
+ 
+- name: exim4 restart
+  service: name=exim4 enabled=true state=restarted
+
+- name: update exim4.conf
+  shell: /usr/sbin/update-exim4.conf
+  
+- name: exim4_restart
+  shell: /usr/sbin/update-exim4.conf && systemctl restart exim4
+
+- name: networking_restart
+  shell: systemctl restart networking
+  
+- name: systemdnetwork_restart
+  shell: systemctl restart systemd-networkd
+
+- name: smartd_restart
+  shell: systemctl restart smartd
+
+- name: bind_restart
+  shell: systemctl restart bind9
+
+- name: apparmor_restart
+  shell: systemctl reload apparmor
+
+- name: openvpn_restart
+  shell: systemctl restart openvpnas

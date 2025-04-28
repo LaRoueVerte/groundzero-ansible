@@ -1,0 +1,52 @@
+---
+
+- name: Sets vars
+  set_fact:
+    src_folder: /home/tomcat/deployments/{{tomcat_build_number}}/{{tomcat_name}}/ROOT
+    dest_folder: /home/tomcat/servers/{{tomcat_instance}}/current/webapps/ROOT/
+
+- name: Sets vars
+  set_fact:
+    old_folder: "{{src_folder}}.{{tomcat_instance}}.OLD"
+
+## To test if the tomcat_build_number is already deployed
+## we try to remove the corresponding line from who.jsp
+## If this succeeds it means this tomcat_build_number is already deployed, resulting in already_deployed.changed = true
+## In order to never actually apply this change we use check_mode: yes to force this mode
+- name: Check if this build is already deployed ( a change here means the build is already deployed, no change means it's not deployed)
+  lineinfile:
+    path: "{{dest_folder}}who.jsp"
+    regexp: "(.*)Build {{tomcat_build_number}}"
+    state: absent
+  check_mode: yes
+  register: already_deployed    
+
+- name: Message if already deployed
+  debug: msg="Build {{tomcat_build_number}} is already deployed on {{ansible_host}} / tomcat/{{tomcat_instance}}"
+  when: already_deployed.changed
+
+- name: Deployment of app {{tomcat_name}} in tomcat{{tomcat_deploy_instancenum}}
+  service: name=tomcat{{tomcat_instance}} state=stopped
+  when: not already_deployed.changed
+  
+- name: clean old folder
+  file: dest={{old_folder}} state=absent 
+  when: not already_deployed.changed
+  
+- shell: mv {{dest_folder}} {{old_folder}}
+  when: not already_deployed.changed
+
+- file: dest={{old_folder}} recurse=yes owner=tomcat group=tomcat
+  when: not already_deployed.changed
+
+- shell: cp -r {{src_folder}} {{dest_folder}}
+  when: not already_deployed.changed
+
+- file: dest={{dest_folder}} recurse=yes owner=tomcat group=tomcat
+  when: not already_deployed.changed
+
+- import_tasks: ../../tomcat/tasks/tomcat_who.yml
+  when: not already_deployed.changed
+
+- service: name=tomcat{{tomcat_instance}} state=started
+  when: not already_deployed.changed

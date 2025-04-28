@@ -1,0 +1,1 @@
+common_monitoring_email: "{{ common_monitoring_email_prefix }}+{{ host_role }}{{ common_monitoring_email_domain }}"

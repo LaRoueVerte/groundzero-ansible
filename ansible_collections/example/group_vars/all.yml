@@ -1,0 +1,10 @@
+hostsdata:
+  mycompany.fr:
+    ip: 42.42.42.42
+
+my_home_ip: 43.43.43.43
+all_whitelisted_ips: "{{[my_home_ip]}}"
+
+common_monitoring_email_prefix: "monitoring"
+common_monitoring_email_domain: "@mycompany.fr"
+ansible_python_interpreter: /usr/bin/python3

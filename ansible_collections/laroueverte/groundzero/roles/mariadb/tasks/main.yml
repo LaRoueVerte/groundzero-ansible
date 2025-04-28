@@ -1,0 +1,19 @@
+---
+#################################
+# Role installing :
+# - mariadb cluster
+
+#################################
+# Dependencies : 
+
+#################################
+# Parameters : 
+# - mariadb_cluster_name          : name of the cluster to create / join
+# - mariadb_cluster_node_name     : name of this node
+# - mariadb_cluster_node_address  : IP address of this node
+# - mariadb_cluster_members       : All IP addresses of this cluster members (including this node)
+- 
+
+- include: mariadb.yml
+  tags:
+   - mariadb

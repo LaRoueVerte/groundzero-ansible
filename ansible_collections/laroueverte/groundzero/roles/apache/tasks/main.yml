@@ -1,0 +1,44 @@
+---
+
+#################################
+# Role installing :
+# - apache
+# - log rotation cron script with optional backup
+
+#################################
+# Parameters : 
+# - apache_backuplogs : if defined, the directory to use for rsyncing logs
+# - apache_reverse_proxy: if defined, the local net used by the reverse proxy 
+# - apache_default_vhost_no : if defined, no default vhost will be installed into /etc/apache2/sites-enabled/001_Default.conf
+# - apache_modevasive : if defined, activates mod_evasive
+# - apache_modevasive_additionnal_whitelisted_ips : array of additionnal ips to whitelist in evasive conf (by default all lrv ips are whitelisted)
+# - apache_ipv6 : if defined, apache will listen on ipv6 if true otherwise only ipv4 (if not defined, default false)
+# - apache_substitute : if  defined, activate mod_substitute   
+#################################
+# Example : 
+#    - {role: apache, 
+#             apache_backuplogs: /mnt/cifsbackup/apachelogs,
+#             apache_reverse_proxy: '10.71.128.0/24'
+#      }
+
+- include: vlogger.yml
+  tags: apache,apache_vlogger
+  
+- include: apache.yml
+  tags: apache
+
+- include: apache_parking.yml
+  tags: apache,apache_parking
+    
+- include: vhost_default.yml
+  tags: apache,apache_vhost_default
+  
+- include: apache_modevasive.yml
+  when: apache_modevasive is defined and apache_modevasive
+  tags: apache,apache_modevasive
+  
+- include: apache_modhttp2.yml
+  when: apache_modhttp2 is defined and apache_modhttp2
+  tags: apache,apache_modhttp2  
+  
+  

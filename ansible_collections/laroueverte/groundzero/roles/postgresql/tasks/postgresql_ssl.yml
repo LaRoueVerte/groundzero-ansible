@@ -1,0 +1,57 @@
+---
+
+- name: Prepare directory for storing SSL certificates
+  file: dest=/etc/postgresql/ssl/ state=directory
+  notify: 
+    restart postgresql
+  
+- name: Copy the server's key
+  copy: src={{postgresql_ssl_key_encrypt}} dest=/etc/postgresql/ssl/gz-postgresql-prod.key mode=640 owner=root group=ssl-cert
+  notify: 
+    restart postgresql
+  
+- name: Copy the server's certificate
+  copy: src={{postgresql_ssl_pem}} dest=/etc/postgresql/ssl/gz-postgresql-prod.pem mode=644 owner=root group=ssl-cert
+  notify: 
+    restart postgresql
+
+- name: Set certificate into /etc/postgresql/{{postgresql_version}}/main/postgresql.conf
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf regexp="^#?ssl_cert_file\s*=\s*" line="ssl_cert_file = '/etc/postgresql/ssl/gz-postgresql-prod.pem'"
+  notify: 
+    restart postgresql
+
+- name: Set ssl_min_protocol_version into /etc/postgresql/{{postgresql_version}}/main/postgresql.conf
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf regexp="^#?ssl_min_protocol_version\s*=\s*" line="ssl_min_protocol_version = '{{postgresql_ssl_min_protocol_version}}'"
+  when: postgresql_ssl_min_protocol_version is defined
+  notify: 
+    restart postgresql
+
+- name: Set certificate key into /etc/postgresql/{{postgresql_version}}/main/postgresql.conf
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/postgresql.conf regexp="^#?ssl_key_file\s*=\s*" line="ssl_key_file = '/etc/postgresql/ssl/gz-postgresql-prod.key'"
+  notify: 
+    restart postgresql
+
+- name: Install pg_hba not using ssl (host)    
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/pg_hba.conf insertafter="^\#\sIPv4\slocal\sconnections" line="host	all		all		{{hostsdata[item].ip}}/32	md5" regexp="{{hostsdata[item].ip}}"
+  with_items:
+    - "{{postgresql_clients}}"
+  when: (not postgresql_clients_ssl is defined or not postgresql_clients_ssl) and postgresql_clients is defined 
+  notify:
+    restart postgresql
+    
+- name: Install pg_hba not using ssl (host). Ips provided    
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/pg_hba.conf insertafter="^\#\sIPv4\slocal\sconnections" line="host	all		all		{{item}}/32	md5" regexp="{{item}}"
+  with_items:
+    - "{{postgresql_clients_ips}}"
+  when: (not postgresql_clients_ssl is defined or not postgresql_clients_ssl) and postgresql_clients_ips is defined 
+  notify:
+    restart postgresql
+
+- name: Install pg_hba using ssl (hostssl)    
+  lineinfile: dest=/etc/postgresql/{{postgresql_version}}/main/pg_hba.conf insertafter="^\#\sIPv4\slocal\sconnections" line="hostssl all   all   {{hostsdata[item].ip}}/32  md5" regexp="hostssl all.*{{hostsdata[item].ip}}"
+  with_items:
+    - "{{postgresql_clients}}"
+  when: (postgresql_clients_ssl is defined and postgresql_clients_ssl) and postgresql_clients is defined 
+  notify:
+    restart postgresql
+  

@@ -1,0 +1,18 @@
+---
+
+- name: Install nfs-client
+  apt: name=cifs-utils state=present
+
+- name: Creates dir for rsyncbackup scripts
+  file: name=/home/root/scripts/rsyncbackup state=directory
+  
+- name: Add rsync backup scripts
+  copy: src=home/root/scripts/rsyncbackup/rsyncbackup.sh dest=/home/root/scripts/rsyncbackup/  mode=a+x
+
+- name: Mount CIFS backup
+  import_tasks: mount_backup_filesystem.yml
+  vars:
+    remote_mount_root: "//{{ ftp_backup_server }}/{{ ftp_backup_login }}"
+    local_mount_root: "/mnt/{{ftp_backup_mount is defined | ternary(ftp_backup_mount,'cifsbackup')}}"
+  
+  

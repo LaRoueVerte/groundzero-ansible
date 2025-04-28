@@ -1,0 +1,5 @@
+---
+
+- name: Vim tasks
+  ansible.builtin.import_tasks: vim.yml
+  tags: groundzero_vim

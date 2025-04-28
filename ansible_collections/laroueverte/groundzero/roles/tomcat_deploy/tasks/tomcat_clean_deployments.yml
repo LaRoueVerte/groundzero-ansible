@@ -1,0 +1,14 @@
+---
+
+- name: List deployment folders
+  command: ls -r /home/tomcat/deployments
+  when: tomcat_deploy_action == "clean_deployments"
+  register: deploymentfolders
+  
+- name: Clean old deployment folders
+  file:
+    state: absent
+    path: "/home/tomcat/deployments/{{ item.1}}" 
+  when: (deploymentfolders.stdout_lines is defined) and (item.0 > 9)
+  with_indexed_items:
+    - "{{ deploymentfolders.stdout_lines }}"

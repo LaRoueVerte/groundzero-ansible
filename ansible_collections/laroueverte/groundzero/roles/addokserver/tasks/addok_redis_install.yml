@@ -1,0 +1,52 @@
+---
+- name: Create /home/root/redis-deb that will contain deb installation files
+  file:
+    path: /home/root/redis-deb
+    state: directory
+
+- name: Copy all necessary .deb files for a manual install (since debian 10 we can not install redis 3)
+  copy: src=home/root/redis-deb/ dest=/home/root/redis-deb
+
+- name: Installation of libjemalloc1 needed by redis-tools
+  apt: state=present deb=/home/root/redis-deb/libjemalloc1_3.6.0-9.1_amd64.deb
+
+- name: Installation of redis-tools
+  apt: deb=/home/root/redis-deb/redis-tools_3.2.6-3+deb9u9_amd64.deb state=present
+
+- name: Installation of redis-server
+  apt: deb=/home/root/redis-deb/redis-server_3.2.6-3+deb9u9_amd64.deb state=present
+
+- name: Adding apt pin for redis 3 
+  copy: src=etc/apt/preferences.d/redis dest=/etc/apt/preferences.d/redis
+    
+- name: Moving redis home from /var/lib/redis to /home/redis
+  user:
+    name: redis
+    home: /home/redis
+    move_home: yes    
+
+- name: Creating symlink from /home/redis to /var/lib/redis
+  file:
+    src: /home/redis/
+    dest: /var/lib/redis
+    state: link
+    owner: redis
+    group: redis
+  
+- name: Create redis server service unit folder, to allow overriding ProtectHome conf
+  file:
+    path: /etc/systemd/system/redis-server.service.d
+    state: directory
+
+- name: Copy redis unit override conf
+  copy: src=etc/systemd/system/redis-server.service.d/override.conf dest=/etc/systemd/system/redis-server.service.d/override.conf
+
+- name: Check redis service and start it
+  service: name=redis-server enabled=yes state=started
+
+- name: Enable logrotate for redis
+  file: dest=/var/log/redis/ROTATEME.redis-server state=touch owner=redis group=redis
+  with_items:
+    - /var/log/addok/ROTATEME.redis-server
+ 
+  

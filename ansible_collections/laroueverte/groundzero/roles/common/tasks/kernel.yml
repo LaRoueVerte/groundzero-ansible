@@ -1,0 +1,23 @@
+---
+
+- name: Copy dirty background sysctl conf vms or vps to persist to next reboot
+  copy: src=etc/sysctl.d/dirty_background.conf dest=/etc/sysctl.d/dirty_background.conf
+  register: dirty_background_status
+  when: kernel_dirty is defined
+ 
+- name: Change live values only if file has been copied
+  shell: echo 10 > /proc/sys/vm/dirty_background_ratio
+  when: kernel_dirty is defined and dirty_background_status.changed
+ 
+- name: Change live values only if file has been copied
+  shell: echo 15 > /proc/sys/vm/dirty_ratio
+  when: kernel_dirty is defined and dirty_background_status.changed
+ 
+- name: Copy ipv6 sysctl conf to disable "DAD" (duplicate address detection) that can cause ipv6 not working.
+  template: src=etc/sysctl.d/ipv6.conf dest=/etc/sysctl.d/ipv6.conf
+  register: ipv6_status
+  when: ip6tables is defined
+ 
+- name: Change live values only if file has been copied. Please note that "systemctl restart networking" may be done. Starting network may fail if a CIFS share is mounted (like the one for logs), unmount it or reboot the server to restart networking.
+  shell: sysctl -p /etc/sysctl.d/ipv6.conf
+  when: ip6tables is defined and ipv6_status.changed

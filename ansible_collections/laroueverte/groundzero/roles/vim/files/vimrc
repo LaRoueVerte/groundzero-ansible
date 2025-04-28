@@ -1,0 +1,3 @@
+source $VIMRUNTIME/defaults.vim
+"Global settings for LRV root user, the only mean to overide defaults.vim so far...
+set mouse=

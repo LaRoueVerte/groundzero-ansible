@@ -1,0 +1,36 @@
+---
+
+#################################
+# Role installing :
+# - postgresql replication recipient
+
+#################################
+# Parameters : 
+# - schema_name : the name of the database to backup /replicate
+# - postgresql_backup_rsync_folder:  the folder used to rsync backups
+# - backup_recipient_server:  the 'ansible' name of the server that will be recipient of the backup
+# - postgresql_backup_recipient_state : ENABLED / DISABLED
+#      If set to ENABLED, this host will be backup recipient, implies : 
+#        - Accepts SSH connections and backups from db1
+#        - Does not perform backups
+#      If set to DISABLED, this recipient will be alone, implies : 
+#        - Refuses any SSH connection and backups from master
+#        - Backup its database
+
+#################################
+# Example : 
+#    - {role: postgresql_backup_master, 
+#             schema_name: mydb, 
+#             postgresql_backup_rsync_folder: /mnt/cifsbackup/mydbbackup,
+#             backup_recipient_server: db2.mycompany.net
+#      }
+
+- include: postgresql_backup_recipient.yml
+  tags:
+    - postgresql_backup_recipient
+
+- include: postgresql_backup_recipient_cron.yml
+  tags:
+    - postgresql_backup_recipient
+    - system_cron
+    

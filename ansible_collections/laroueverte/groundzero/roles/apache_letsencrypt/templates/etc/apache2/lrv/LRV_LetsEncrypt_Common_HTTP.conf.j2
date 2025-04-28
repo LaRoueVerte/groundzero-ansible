@@ -1,0 +1,15 @@
+#Common VHOST part to be included in any HTTP vhost supporting letsencrypt encryption. 
+
+	<Directory "/var/www/letsencrypt">
+        Order Deny,Allow
+        Allow from All
+	</Directory>
+	
+	Alias /.well-known/acme-challenge/ "/var/www/letsencrypt/.well-known/acme-challenge/"
+
+# If Jk, add this to your vhost :
+#    JkUnMount /.well-known/acme-challenge/* loadbalancer1
+    RewriteEngine on
+    RewriteCond %{HTTPS} =off
+	RewriteCond %{REQUEST_URI} !^/.well-known/acme-challenge/
+	RewriteRule ^(.+) https://%{HTTP_HOST}$1 [L,R=301]

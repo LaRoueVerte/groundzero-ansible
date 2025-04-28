@@ -1,0 +1,4 @@
+---
+
+- name: Fix locale issues if french does not exists
+  shell: locale-gen fr_FR.UTF-8

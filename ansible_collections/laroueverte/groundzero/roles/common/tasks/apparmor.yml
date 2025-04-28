@@ -1,0 +1,4 @@
+---
+
+- name: Install apparmor
+  apt: name=apparmor state=present

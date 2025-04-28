@@ -1,0 +1,17 @@
+---
+
+- copy: src=home/root/scripts/zabbix/cmdline-jmxclient-0.10.3.jar dest=/home/root/scripts/zabbix/
+
+- copy: src=home/root/scripts/zabbix/getJMX.sh dest=/home/root/scripts/zabbix/getJMX.sh mode=a+x
+
+- name: Copy zabbix lrv checks file
+  copy: src=etc/zabbix/zabbix_agentd.conf.d/jmx.conf dest=/etc/zabbix/zabbix_agentd.conf.d/
+  notify: restart zabbix agent
+  when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
+
+- name: create tomcat account
+  user: name=tomcat state=present shell=/bin/bash
+
+- name: create tomcat servers folder
+  file: state=directory dest=/home/tomcat/servers owner=tomcat group=tomcat
+  

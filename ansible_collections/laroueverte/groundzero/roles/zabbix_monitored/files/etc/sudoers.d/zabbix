@@ -1,0 +1,9 @@
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/getRaidStatus.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkProcess.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkHardRaidMegaCli.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkNetwork.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkNbProcesses.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkNbRunningProcesses.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkFileSystemReadOnly.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/zabbix/checkExim4Queue.sh
+zabbix ALL = NOPASSWD: /home/root/scripts/getDebianEolDaysLeft.sh

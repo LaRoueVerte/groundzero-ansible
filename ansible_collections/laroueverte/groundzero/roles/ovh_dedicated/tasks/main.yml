@@ -1,0 +1,3 @@
+---
+- ansible.builtin.import_tasks: ovh_dedicated.yml
+  tags: ovh_dedicated,system_iptables

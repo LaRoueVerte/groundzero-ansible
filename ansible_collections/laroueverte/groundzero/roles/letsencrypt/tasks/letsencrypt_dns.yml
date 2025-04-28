@@ -1,0 +1,30 @@
+---
+
+# This file is designed to be used into this role but can also be included from other roles
+# Parameters :
+#    letsencrypt_servername : name of the main server for generating certificate
+#    letsencrypt_serveralias : aliases of the certificate, separated by comas
+
+- name: DNS MODE check if a letsencrypt certificate {{letsencrypt_servername}} has been created (done only if it was not present before)
+  stat: path=/etc/letsencrypt/live/{{letsencrypt_servername}}/cert.pem
+  register: letsencryptcertificate
+  when: letsencrypt_checkcertificate is defined and letsencrypt_checkcertificate
+  tags:
+    - letsencrypt
+
+- name: DNS MODE Create the certificate {{letsencrypt_servername}} plus aliases by launching certbot command (using letsencrypt_serveralias)
+  shell: certbot certonly --manual --preferred-challenges=dns --manual-auth-hook /home/root/scripts/letsencrypt_dns_authhook.sh --manual-public-ip-logging-ok --agree-tos --email {{common_monitoring_email}} -w /var/www/letsencrypt/ -d {{letsencrypt_servername}} -d {{letsencrypt_serveralias.split(",")|join(' -d ')}}
+  when: (letsencrypt_checkcertificate is not defined or not letsencryptcertificate.stat.exists ) and letsencrypt_serveralias is defined
+  tags:
+    - letsencrypt
+
+- name: DNS MODE Create the certificate {{letsencrypt_servername}} by launching certbot command (not using letsencrypt_serveralias)
+  shell: certbot certonly --manual --preferred-challenges=dns --manual-auth-hook /home/root/scripts/letsencrypt_dns_authhook.sh --manual-public-ip-logging-ok --agree-tos --email {{common_monitoring_email}} -w /var/www/letsencrypt/ -d {{letsencrypt_servername}}
+  when: (letsencrypt_checkcertificate is not defined or not letsencryptcertificate.stat.exists ) and letsencrypt_serveralias is not defined
+  tags:
+    - letsencrypt
+    
+- name: Install the certificate into openvpn if the certificate has just been created
+  shell: RENEWED_LINEAGE=/etc/letsencrypt/live/{{letsencrypt_servername}} /home/root/scripts/letsencrypt_notify.sh
+  when: letsencrypt_autoreload_openvpn is defined and letsencrypt_autoreload_openvpn and (letsencrypt_checkcertificate is not defined or not letsencryptcertificate.stat.exists )
+
