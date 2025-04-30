@@ -9,7 +9,7 @@
 # - schema_name : the name of the database to backup /replicate
 # - postgresql_backup_rsync: do we need to rsync the backup folder to a another folder (optional, default : true)
 # - postgresql_backup_rsync_folder:  the folder used to rsync backups
-# - backup_recipient_server:  the 'ansible' name of the server that will be recipient of the backup
+# - backup_recipient_server:  the 'ansible' name of the server that will be recipient of the backup. If not present, backup will not be pushed
 # - postgresql_backup_retention_num : the number of backup to keep in total and for the "day" part (optional, default 10)
 # - postgresql_backup_master_state : ENABLED / DISABLED
 #          If set to ENABLED, this host will be master, implies : 
@@ -17,13 +17,19 @@
 #          If set to DISABLED, this host will be backup recipient, implies : 
 #            - Does not perform database replication
 # - postgresql_fallback_server : the 'ansible' name of the fallback DB server (eg: db2.mycompany.net)
+# - postgresql_master_replication_hour : The "hour" parameter to use for crontab
+# - postgresql_master_replication_minute : The "minute" parameter to use for crontab
+
 
 #################################
 # Example : 
 #    - {role: postgresql_backup_master, 
 #             schema_name: mydb, 
 #             postgresql_backup_rsync_folder: /mnt/cifsbackup/mydbbackup,
-#             backup_recipient_server: otherdbdb2.mycompany.nett
+#             backup_recipient_server: otherdbdb2.mycompany.net,
+#             postgresql_master_replication_hour: '*',
+#             postgresql_master_replication_minute: '15',
+#             postgresql_backup_master_state: 'ENABLED'
 #      }
 
 

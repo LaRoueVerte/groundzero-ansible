@@ -15,25 +15,14 @@
     remoteFolder: '--remotefolder {{remote_folder}}'
   when: remote_folder is defined
   
-- name: Install PG Replication crontab with rsync backup  
+- name: Install PG Replication crontab  
   cron:
     user: transfert
     name: "PG Replication"
     hour: "{{postgresql_master_replication_hour}}"
     minute: "{{postgresql_master_replication_minute}}"
-    job: "/home/root/scripts/transfert/replicationPostgresDB.sh --dbname {{postgresql_db_schema_name}} --localfolder /home/transfert/{{postgresql_db_schema_name}}/backups --server {{backup_recipient_server}} --nbkeep {{(postgresql_backup_retention_num is defined)|ternary(postgresql_backup_retention_num, 10)}} --rsyncdest {{postgresql_backup_rsync_folder}} {{(pgDumpOptions is defined)|ternary(pgDumpOptions, '')}} {{(fallbackServer is defined)|ternary(fallbackServer, '')}} >> /var/log/transfert/transfert_cron_backupPostgresHourly.log 2>&1"
+    job: "/home/root/scripts/transfert/replicationPostgresDB.sh --dbname {{postgresql_db_schema_name}} --localfolder /home/transfert/{{postgresql_db_schema_name}}/backups --server {{ (backup_recipient_server is defined ) | ternary(backup_recipient_server, 'NONE') }} --nbkeep {{(postgresql_backup_retention_num is defined)|ternary(postgresql_backup_retention_num, 10)}} {{(postgresql_backup_rsync_folder is defined)|ternary('--rsyncdest','')}} {{(postgresql_backup_rsync_folder is defined)|ternary(postgresql_backup_rsync_folder,'')}} {{(pgDumpOptions is defined)|ternary(pgDumpOptions, '')}} {{(fallbackServer is defined)|ternary(fallbackServer, '')}} >> /var/log/transfert/transfert_cron_backupPostgresHourly.log 2>&1"
     disabled: "{{ postgresql_backup_master_state == 'DISABLED' }}"
-  when: not postgresql_backup_rsync is defined or postgresql_backup_rsync  
-
-- name: Install PG Replication crontab without rsync backup 
-  cron:
-    user: transfert
-    name: "PG Replication"
-    hour: "{{postgresql_master_replication_hour}}"
-    minute: "{{postgresql_master_replication_minute}}"
-    job: "/home/root/scripts/transfert/replicationPostgresDB.sh --dbname {{postgresql_db_schema_name}} --localfolder /home/transfert/{{postgresql_db_schema_name}}/backups {{remoteFolder}} --server {{backup_recipient_server}} --nbkeep {{(postgresql_backup_retention_num is defined)|ternary(postgresql_backup_retention_num, 10)}} {{(pgDumpOptions is defined)|ternary(pgDumpOptions, '')}} {{(fallbackServer is defined)|ternary(fallbackServer, '')}} >> /var/log/transfert/transfert_cron_backupPostgresHourly.log 2>&1"
-    disabled: "{{ postgresql_backup_master_state == 'DISABLED' }}"
-  when: postgresql_backup_rsync is defined and not postgresql_backup_rsync  
 
 - name: Enable logrotate for transfert_cron_backupPostgresHourly.log
   copy: src=etc/logrotate.d/backupdb.conf dest=/etc/logrotate.d/backupdb
