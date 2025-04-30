@@ -10,5 +10,5 @@
     - laroueverte.groundzero.apache_vhosts
     - laroueverte.groundzero.postgresql
     - laroueverte.groundzero.postgresql_db
-    - postgresql_backup_master
+    - laroueverte.groundzero.postgresql_backup_master
     - mycompany
