@@ -29,3 +29,8 @@ postgresql_clients: []
 postgresql_db_schema_name: 'mycompany'
 postgresql_db_nightly_maintenance_hour: '15'
 postgresql_db_nightly_maintenance_minute: '3'
+
+postgresql_master_replication_hour: '*'
+postgresql_master_replication_minute: '15'
+postgresql_backup_master_state: 'ENABLED'
+

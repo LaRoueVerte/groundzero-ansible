@@ -4,6 +4,8 @@ cd
 . /home/root/scripts/base.sh
 showHeader
 
+SERVER="NONE"
+
 while [[ $1 != "" ]]; do
 	if [[ $1 == "--dbname" ]] ; then
 	   DB_NAME=$2
@@ -131,31 +133,36 @@ if [ $TIMESTAMP == $TIMESTAMP_DAY_20 ] || [ $TIMESTAMP == $TIMESTAMP_DAY_21 ]; t
 	/home/root/scripts/keepRecent/keepRecent.sh $LOCAL_FOLDER_DAILY $NB_KEEP backup .sql.gz
 	testResult
 
-	#On cree le folder en remote
-	ssh transfert@$SERVER mkdir -p $REMOTE_FOLDER/daily/
-	testResult
+	if [ $SERVER != "NONE"]; then
+		#On cree le folder en remote
+		ssh transfert@$SERVER mkdir -p $REMOTE_FOLDER/daily/
+		testResult
 
-	#On Pousse le fichier vers l'autre serveur
-	scp $LOCAL_FOLDER_DAILY/$FILENAME.gz transfert@$SERVER:$REMOTE_FOLDER/daily/$FILENAME.gz
-	testResult
+		#On Pousse le fichier vers l'autre serveur
+		scp $LOCAL_FOLDER_DAILY/$FILENAME.gz transfert@$SERVER:$REMOTE_FOLDER/daily/$FILENAME.gz
+		testResult
 
-	#On garde les N recents en remote
-	ssh transfert@$SERVER /home/root/scripts/keepRecent/keepRecent.sh $REMOTE_FOLDER/daily/ $NB_KEEP backup .sql.gz
-	testResult
+		#On garde les N recents en remote
+		ssh transfert@$SERVER /home/root/scripts/keepRecent/keepRecent.sh $REMOTE_FOLDER/daily/ $NB_KEEP backup .sql.gz
+		testResult
+	fi
 
 fi
 echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished keep recent"
 
-#On Pousse le fichier vers l'autre serveur
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting pushing to remote server"
-scp $LOCAL_FOLDER/$FILENAME.gz transfert@$SERVER:$REMOTE_FOLDER/$FILENAME.gz
-testResult
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished pushing to remote server"
+if [ $SERVER != "NONE"]; then
 
-#On garde les N recents en remote
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting keep recent on remote server"
-ssh transfert@$SERVER /home/root/scripts/keepRecent/keepRecent.sh $REMOTE_FOLDER $NB_KEEP backup .sql.gz
-testResult
+	#On Pousse le fichier vers l'autre serveur
+	echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting pushing to remote server"
+	scp $LOCAL_FOLDER/$FILENAME.gz transfert@$SERVER:$REMOTE_FOLDER/$FILENAME.gz
+	testResult
+	echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished pushing to remote server"
+
+	#On garde les N recents en remote
+	echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting keep recent on remote server"
+	ssh transfert@$SERVER /home/root/scripts/keepRecent/keepRecent.sh $REMOTE_FOLDER $NB_KEEP backup .sql.gz
+	testResult
+fi
 
 # on déplace dans hourly
 mv $LOCAL_FOLDER/$FILENAME.gz $LOCAL_FOLDER_HOURLY
@@ -164,27 +171,29 @@ testResult
 #On garde les N recents dans hourly
 /home/root/scripts/keepRecent/keepRecent.sh $LOCAL_FOLDER_HOURLY $NB_KEEP backup .sql.gz
 testResult
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished keep recent on remote server"
+echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished keep recent locally"
 
-#On teste si le serveur distant est un serveur de base ou non. La présence du fichier NODB indique que non.
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting install on other DB server"
-if ssh transfert@$SERVER ls $REMOTE_FOLDER/NODB > /dev/null 2>&1 ; then
-	echo "Distant server $SERVER is not a Database server. Database will not be installed there"
-	if [[ ! "$FALLBACK_SERVER" == "" ]]; then
-		echo "DB will be installed on fallback server : $FALLBACK_SERVER"
-		ssh transfert@$FALLBACK_SERVER /home/root/scripts/transfert/installDBFromBackupServer.sh --dbname $DB_NAME --backupserver $SERVER --backupfilepath $REMOTE_FOLDER/$FILENAME.gz
+if [ $SERVER != "NONE"]; then
+	#On teste si le serveur distant est un serveur de base ou non. La présence du fichier NODB indique que non.
+	echo "[`date '+%Y-%m-%d %H:%M:%S'`] Starting install on other DB server"
+	if ssh transfert@$SERVER ls $REMOTE_FOLDER/NODB > /dev/null 2>&1 ; then
+		echo "Distant server $SERVER is not a Database server. Database will not be installed there"
+		if [[ ! "$FALLBACK_SERVER" == "" ]]; then
+			echo "DB will be installed on fallback server : $FALLBACK_SERVER"
+			ssh transfert@$FALLBACK_SERVER /home/root/scripts/transfert/installDBFromBackupServer.sh --dbname $DB_NAME --backupserver $SERVER --backupfilepath $REMOTE_FOLDER/$FILENAME.gz
+			testResult
+		fi 
+	else
+		#On droppe et recrée la base en remote
+		ssh transfert@$SERVER /home/root/scripts/transfert/createPostgresDatabase.sh $DB_NAME -virgin
 		testResult
-	fi 
-else
-	#On droppe et recrée la base en remote
-	ssh transfert@$SERVER /home/root/scripts/transfert/createPostgresDatabase.sh $DB_NAME -virgin
-	testResult
-	
-	#On installe la base en remote
-	ssh transfert@$SERVER /home/root/scripts/transfert/installPostgresDb.sh $DB_NAME $REMOTE_FOLDER/$FILENAME.gz
-	testResult
+		
+		#On installe la base en remote
+		ssh transfert@$SERVER /home/root/scripts/transfert/installPostgresDb.sh $DB_NAME $REMOTE_FOLDER/$FILENAME.gz
+		testResult
+	fi
+	echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished install on other DB server"
 fi
-echo "[`date '+%Y-%m-%d %H:%M:%S'`] Finished install on other DB server"
 
 if [[ ! "$RSYNC_DEST" == "" ]]; then
 	ionice -c3 rsync -vaz --delete $LOCAL_FOLDER $RSYNC_DEST
