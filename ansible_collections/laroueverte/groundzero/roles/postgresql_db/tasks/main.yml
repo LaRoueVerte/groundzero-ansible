@@ -25,9 +25,9 @@
 #             postgresql_db_nightly_maintenance_hour: '5'
 #      }
 
-- include: postgresql_db.yml
+- include_tasks: postgresql_db.yml
   tags: postgresql_db
 
-- include: postgresql_db_cron.yml
+- include_tasks: postgresql_db_cron.yml
   tags: postgresql_db, system_cron
   

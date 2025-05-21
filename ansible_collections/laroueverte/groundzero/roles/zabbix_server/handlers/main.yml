@@ -1,4 +1,4 @@
 - name: restart zabbix
   shell: systemctl --system daemon-reload && systemctl enable zabbix-server && 	systemctl restart zabbix-server
 
-- include: ../../apache/handlers/main.yml
+- include_tasks: ../../apache/handlers/main.yml

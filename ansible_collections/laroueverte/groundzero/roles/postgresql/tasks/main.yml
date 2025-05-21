@@ -54,21 +54,21 @@
 #      }
 
 
-- include: postgresql.yml
+- include_tasks: postgresql.yml
   tags: postgresql
   
-- include: postgresql_ssl.yml
+- include_tasks: postgresql_ssl.yml
   tags: postgresql_ssl,postgresql
   when: postgresql_clients_ssl is defined and postgresql_clients_ssl
 
-- include: postgresql_conf.yml
+- include_tasks: postgresql_conf.yml
   tags: postgresql_conf,postgresql
   
-- include: postgresql_replication.yml
+- include_tasks: postgresql_replication.yml
   tags: postgresql_replication,postgresql
   when: postgresql_replication_on is defined and postgresql_replication_on
 
-- include: postgresql_monitored.yml
+- include_tasks: postgresql_monitored.yml
   tags: postgresql,postgresql_monitored
   when: "'laroueverte.groundzero.zabbix_monitored' in ansible_role_names"
 

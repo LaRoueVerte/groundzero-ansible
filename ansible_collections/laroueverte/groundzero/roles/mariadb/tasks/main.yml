@@ -14,6 +14,6 @@
 # - mariadb_cluster_members       : All IP addresses of this cluster members (including this node)
 - 
 
-- include: mariadb.yml
+- include_tasks: mariadb.yml
   tags:
    - mariadb

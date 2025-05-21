@@ -125,7 +125,7 @@
     insertafter: org.apache.catalina.core.ThreadLocalLeakPreventionListener
   notify: restart_tomcat{{tomcat_instance}} 
       
-- include: tomcat_who.yml
+- include_tasks: tomcat_who.yml
   tags: tomcat_who
 
 - name: install tomcat {{tomcat_instance}} in systemd

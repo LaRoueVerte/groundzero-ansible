@@ -1,6 +1,6 @@
 ---
 
-- include: zabbix_repo.yml
+- include_tasks: zabbix_repo.yml
 
 - name: Install zabbix agent
   apt: name=zabbix-agent state=present

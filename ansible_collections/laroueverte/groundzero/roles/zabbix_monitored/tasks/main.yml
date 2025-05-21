@@ -10,5 +10,5 @@
 #################################
 # Example : 
 
-- include: zabbix_monitored.yml
+- include_tasks: zabbix_monitored.yml
   tags: zabbix_monitored

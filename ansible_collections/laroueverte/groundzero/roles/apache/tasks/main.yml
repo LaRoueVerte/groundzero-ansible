@@ -21,23 +21,23 @@
 #             apache_reverse_proxy: '10.71.128.0/24'
 #      }
 
-- include: vlogger.yml
+- include_tasks: vlogger.yml
   tags: apache,apache_vlogger
   
-- include: apache.yml
+- include_tasks: apache.yml
   tags: apache
 
-- include: apache_parking.yml
+- include_tasks: apache_parking.yml
   tags: apache,apache_parking
     
-- include: vhost_default.yml
+- include_tasks: vhost_default.yml
   tags: apache,apache_vhost_default
   
-- include: apache_modevasive.yml
+- include_tasks: apache_modevasive.yml
   when: apache_modevasive is defined and apache_modevasive
   tags: apache,apache_modevasive
   
-- include: apache_modhttp2.yml
+- include_tasks: apache_modhttp2.yml
   when: apache_modhttp2 is defined and apache_modhttp2
   tags: apache,apache_modhttp2  
   

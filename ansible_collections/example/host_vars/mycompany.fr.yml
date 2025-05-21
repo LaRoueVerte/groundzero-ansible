@@ -13,7 +13,7 @@ apache_vhosts: [
       jk: false,
       letsencrypt: true,
       letsencrypt_web: true,
-      include: "/etc/apache2/lrv/mycompany.conf"
+      include_tasks: "/etc/apache2/lrv/mycompany.conf"
     },
   ]
 apache_default_vhost_no: true
