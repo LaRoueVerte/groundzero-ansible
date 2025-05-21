@@ -12,11 +12,11 @@
 # Parameters : 
 # - docker_user : user that will be added to docker group
 
-- include: docker.yml
+- include_tasks: docker.yml
   tags:
    - docker
    
-- include: docker_service_local_conf.yml
+- include_tasks: docker_service_local_conf.yml
   tags:
    - docker
    - docker_service_local_conf

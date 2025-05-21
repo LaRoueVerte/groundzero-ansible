@@ -86,7 +86,7 @@
     - apache_vhosts_modjk
   when: apache_vhosts_modjk is defined and apache_vhosts_modjk
 
-#Replaced with include: . Waiting for fix of https://github.com/ansible/ansible/issues/31673
+#Replaced with include_tasks: . Waiting for fix of https://github.com/ansible/ansible/issues/31673
 - include_tasks: vhost.yml
   with_items: "{{apache_vhosts}}"
   loop_control:

@@ -5,5 +5,5 @@
 #################################
 # Parameters : 
 
-- include: apache_ssl.yml
+- include_tasks: apache_ssl.yml
   tags: apache_ssl

@@ -17,7 +17,7 @@
 # - letsencrypt_dns_ovhapi_application_secret : For DNS validation, the application secret to connect to OVH API
 # - letsencrypt_dns_ovhapi_consumer_key : For DNS validation, the consumer key to connect to OVH API
 
-- include: letsencrypt_common.yml
+- include_tasks: letsencrypt_common.yml
   tags: letsencrypt
   
 # Launch certbot if this role is meant to

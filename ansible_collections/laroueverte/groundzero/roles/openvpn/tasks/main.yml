@@ -13,16 +13,16 @@
 # - openvpn_cron_enabled: if true, the daemon will restart periodically using a crontab
 # - openvpn_backup_enabled: if true, the sqlite files will be backed up using a crontab
 
-- include: openvpn.yml
+- include_tasks: openvpn.yml
   tags:
    - openvpn
    
-- include: openvpn_backup.yml
+- include_tasks: openvpn_backup.yml
   tags:
    - openvpn
    - openvpnbackup   
    
-- include: openvpn_cron.yml
+- include_tasks: openvpn_cron.yml
   tags:
    - openvpn
    - openvpnbackup 

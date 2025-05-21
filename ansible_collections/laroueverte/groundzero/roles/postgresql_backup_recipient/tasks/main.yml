@@ -25,11 +25,11 @@
 #             backup_recipient_server: db2.mycompany.net
 #      }
 
-- include: postgresql_backup_recipient.yml
+- include_tasks: postgresql_backup_recipient.yml
   tags:
     - postgresql_backup_recipient
 
-- include: postgresql_backup_recipient_cron.yml
+- include_tasks: postgresql_backup_recipient_cron.yml
   tags:
     - postgresql_backup_recipient
     - system_cron

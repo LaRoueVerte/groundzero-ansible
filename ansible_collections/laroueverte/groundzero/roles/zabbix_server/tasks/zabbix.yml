@@ -2,7 +2,7 @@
 
 - name: Install zabbix server
   block: 
-   - include: ../../zabbix_monitored/tasks/zabbix_repo.yml
+   - include_tasks: ../../zabbix_monitored/tasks/zabbix_repo.yml
 
    - name: Install zabbix server package
      apt: name=zabbix-server-pgsql state=present

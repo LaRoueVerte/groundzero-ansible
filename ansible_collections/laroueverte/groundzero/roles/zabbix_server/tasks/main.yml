@@ -3,4 +3,4 @@
 # parameters :
 # zabbix_domain
 
-- include: zabbix.yml
+- include_tasks: zabbix.yml

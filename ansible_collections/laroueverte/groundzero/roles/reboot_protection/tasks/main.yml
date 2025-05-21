@@ -1,4 +1,4 @@
 ---
 
-- include: reboot_protection.yml
+- include_tasks: reboot_protection.yml
   tags: reboot_protection

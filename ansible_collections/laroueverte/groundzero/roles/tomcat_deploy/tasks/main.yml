@@ -27,14 +27,14 @@
 #    - {role: tomcat_deploy, tomcat_deploy_action: "clean_deployments"}
 
 - name: Prepare tomcat deployment
-  include: tomcat_prepare.yml 
+  include_tasks: tomcat_prepare.yml 
     tomcat_name={{tomcat_deploy_name}} 
     delivery_base_url={{ci_base_url}}
     war_name={{delivery_war_name}} 
   when: tomcat_deploy_action=='prepare'
 
 - name: Deploy to tomcat {{tomcat_deploy_instancenum}}
-  include: tomcat_deploy.yml tomcat_instance={{tomcat_deploy_instancenum}} tomcat_name={{tomcat_deploy_name}}
+  include_tasks: tomcat_deploy.yml tomcat_instance={{tomcat_deploy_instancenum}} tomcat_name={{tomcat_deploy_name}}
   when: tomcat_deploy_action=='deploy' 
   
 - name: Smoke test tomcat {{tomcat_deploy_instancenum}}
@@ -66,9 +66,9 @@
   when: tomcat_deploy_action=='deploy' and testingsentemail.stdout_lines[0] == '1'
   
 - name: Rollback tomcat N
-  include: tomcat_rollback.yml tomcat_instance={{tomcat_deploy_instancenum}} tomcat_name={{tomcat_deploy_name}}
+  include_tasks: tomcat_rollback.yml tomcat_instance={{tomcat_deploy_instancenum}} tomcat_name={{tomcat_deploy_name}}
   when: tomcat_deploy_action=='rollback' 
   
 - name: Clean tomcat deployment folders
-  include: tomcat_clean_deployments.yml
+  include_tasks: tomcat_clean_deployments.yml
   when: tomcat_deploy_action=='clean_deployments'

@@ -65,13 +65,13 @@
     - tomcat3
 
 - name: Install common files for tomcats
-  include: tomcat_common.yml
+  include_tasks: tomcat_common.yml
   tags:
     - tomcat
     - tomcat_common
 
 - name: Copy external_jar_dependencies libraries
-  include: tomcat_external_jar_dependencies.yml
+  include_tasks: tomcat_external_jar_dependencies.yml
   when: copy_tomcat_external_jar_dependencies is defined and copy_tomcat_external_jar_dependencies 
   tags:
     - tomcat

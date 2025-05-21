@@ -9,7 +9,7 @@
     - exim4_restart
  
 ## DKIM
-- include: exim4_dkim.yml
+- include_tasks: exim4_dkim.yml
   when: exim4_dkim is defined
 
 - name: Exim4 Configuration not supported by debian for ipv6

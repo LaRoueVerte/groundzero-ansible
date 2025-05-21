@@ -20,51 +20,51 @@
 # iptables_ssh_port_knocking: An array defining the port knocking sequence.
 #                       For example, [1234, 5678, 91011] will open the SSH port if the host is able to connect to these ports in this order.
 
-- include: ssh.yml
+- include_tasks: ssh.yml
   tags: ssh,common
   when: not nossh is defined
 
-- include: log.yml
+- include_tasks: log.yml
   tags: common,log
 
-- include: apparmor.yml
+- include_tasks: apparmor.yml
   tags: apparmor,common
 
-- include: bind.yml
+- include_tasks: bind.yml
   tags: bind,common
 
-- include: time.yml
+- include_tasks: time.yml
   tags: time,common
 
-- include: exim4.yml
+- include_tasks: exim4.yml
   tags: exim4,common
 
-- include: fail2ban.yml
+- include_tasks: fail2ban.yml
   tags: fail2ban,common
 
-- include: iptables.yml
+- include_tasks: iptables.yml
   tags: system_iptables,common
 
-- include: apticron.yml
+- include_tasks: apticron.yml
   tags: apticron,common
   when: not noapticron is defined
 
-- include: tools.yml
+- include_tasks: tools.yml
   tags: common_tools,common,system_backup
 
-- include: lrv_scripts.yml
+- include_tasks: lrv_scripts.yml
   tags: lrv_scripts,common
 
-- include: etc_hosts.yml
+- include_tasks: etc_hosts.yml
   tags: etc_hosts,common
 
-- include: sudo.yml
+- include_tasks: sudo.yml
   tags: sudo,common
 
-- include: kernel.yml
+- include_tasks: kernel.yml
   tags: kernel,common
 
-- include: networking.yml
+- include_tasks: networking.yml
   when: networking_ips is defined
   tags: networking,common
 
@@ -73,9 +73,9 @@
   tags: smartd,common
   when: not common_smartd_enabled is defined or common_smartd_enabled
 
-- include: system_backup.yml
+- include_tasks: system_backup.yml
   when: system_backup_configuration is defined
   tags: system_backup,common
 
-- include: openssl.yml
+- include_tasks: openssl.yml
   tags: openssl,common

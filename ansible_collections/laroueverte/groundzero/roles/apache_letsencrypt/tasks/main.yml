@@ -9,5 +9,5 @@
 # - apache_letsencrypt_domains_main  :  defines the main domain used to create the letsencrypt certificate
 # - apache_letsencrypt_domains_others :  defines comma separated list of alternative domains used to create the letsencrypt certificate
 
-- include: apache_letsencrypt.yml
+- include_tasks: apache_letsencrypt.yml
   tags: apache_letsencrypt
