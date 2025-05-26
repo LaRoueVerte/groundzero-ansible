@@ -1,0 +1,12 @@
+- name: install {{systemd_service_name}} in systemd
+  template: src=lib/systemd/system/systemd.service.j2 dest=/etc/systemd/system/{{systemd_service_name}}.service mode=444
+  notify: systemd reload
+  tags: systemd_service
+
+- name : Ensure service {{systemd_service_name}} is started
+  ansible.builtin.systemd_service:
+    name: "{{systemd_service_name}}"
+    daemon_reload: true
+    enabled: true
+    state: started
+  tags: systemd_service

@@ -1,0 +1,30 @@
+#################################
+# Role creating a systemd service
+
+#################################
+# Depends from roles :  
+# - 
+ 
+#################################
+# Parameters : 
+# - systemd_service_label : description of the service
+# - systemd_service_name : identifier name that will be used for files and service name
+# - systemd_service_user:  User running the service
+# - systemd_service_command:  Command for running the service
+# - systemd_service_depends:  Service name to depends (generates both After= and Requires= lines)
+
+#################################
+# Example : 
+#
+#    - {role: laroueverte.groundzero.systemd_service,
+#           systemd_service_label: 'Service starting the backend',
+#           systemd_service_name: 'myapp_backend',
+#           systemd_service_user: 'myapp',
+#           systemd_service_command: '/home/myapp/start.sh',
+#           systemd_service_depends: 'postgresql',
+#      }
+
+- name: Include main file
+  ansible.builtin.include_tasks:
+    file: systemd_service.yml
+  tags: systemd_service
