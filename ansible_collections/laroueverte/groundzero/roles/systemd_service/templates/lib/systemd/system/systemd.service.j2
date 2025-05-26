@@ -1,0 +1,14 @@
+[Unit]
+Description={{systemd_service_label}}
+{% if systemd_service_depends is defined %}
+After={{systemd_service_depends}}
+Requires={{systemd_service_depends}}
+{% endif %}
+
+[Service]
+ExecStart={{systemd_service_command}}
+User={{systemd_service_user}}
+
+[Install]
+WantedBy=multi-user.target
+Alias={{systemd_service_name}}.service

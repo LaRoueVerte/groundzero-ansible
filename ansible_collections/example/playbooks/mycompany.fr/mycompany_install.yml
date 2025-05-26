@@ -11,4 +11,11 @@
     - laroueverte.groundzero.postgresql
     - laroueverte.groundzero.postgresql_db
     - laroueverte.groundzero.postgresql_backup_master
+    - { role: laroueverte.groundzero.systemd_service,
+        systemd_service_name: 'myapp_backend',
+        systemd_service_label: 'Myapp backend',
+        systemd_service_user: 'mycompany',
+        systemd_service_command: '/home/mycompany/mycompany.sh',
+        systemd_service_depends: 'postgresql'
+    }
     - mycompany
